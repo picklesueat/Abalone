@@ -239,6 +239,8 @@ class AbaloneBoard( HexShapedBoard ):
                 temp_val = self[ coord_from ].val
                 self[ coord_from ] = self[ coord_to ].val
                 self[ coord_to ] = temp_val
+                return True #move was made
+
 
         def push():
             coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
@@ -313,16 +315,16 @@ class AbaloneBoard( HexShapedBoard ):
         assert max( direction.x ,  direction.y ) <= 1
         assert min( direction.x , direction.y ) >= -1
         assert -2 < direction.x + direction.y < 2
-
+        print('ffff')
         #one_piece_move
         if ( len( coords_from ) == 1 ):
             coord_from = coords_from[0]
             coord_to = coord_from + direction
+            print('fi')
+            return one_piece_move( coord_from, coord_to )
 
-            one_piece_move( coord_from, coord_to )
 
-
-        if ( 2 <= len( coords_from ) <= 3  ):
+        elif ( 2 <= len( coords_from ) <= 3  ):
             #they must be in a 'row' for any other movetype
             if is_in_row( coords_from ):
 
@@ -334,10 +336,11 @@ class AbaloneBoard( HexShapedBoard ):
                     if( coord_to_val == AbaloneBoard.EMPTY  ):
                         for coord in coords_from:
                             self.direction_move( [coord] , direction )
+                        return True
 
                     #defines a 'push' move
                     elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
-                            push()
+                            return push()
 
                 #broadside move
                 else:
@@ -368,6 +371,7 @@ class AbaloneBoard( HexShapedBoard ):
                             self[ coord_from ] = self[ coord_to ].val
                             self[ coord_to ] = temp_val
 
+                        return True
 
 
 
