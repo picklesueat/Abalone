@@ -234,6 +234,7 @@ class AbaloneBoard( HexShapedBoard ):
         return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == 0 )
 
     def direction_move( self, coords_from: list, direction: axial_coord ):
+        print('ffffffffffffffffff')
         def one_piece_move( coord_from , coord_to ):
             if( self.is_empty_neighbor( coord_from , coord_to ) ):
                 temp_val = self[ coord_from ].val
