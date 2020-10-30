@@ -266,6 +266,8 @@ class AbaloneBoard( HexShapedBoard ):
 
                     self[ prev_coord ] = AbaloneBoard.EMPTY
 
+                    return 'push'
+
                     break
 
                 if( self[ coord_to ].val == coord_to_val ):
@@ -278,6 +280,8 @@ class AbaloneBoard( HexShapedBoard ):
 
                     for coord in coords_from:
                         self.direction_move( [coord] , direction )
+
+                    return True
 
                     break
 
