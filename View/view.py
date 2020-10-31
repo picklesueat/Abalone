@@ -2,9 +2,7 @@ import pygame
 from math import sin,cos, sqrt, ceil,pi
 import sys
 
-sys.path.insert(1, "/home/picklesueat/Python_projects/Abalone/Model/")
-
-from board import AbaloneBoard, Hex, axial_coord
+from model.board import AbaloneBoard, Hex, axial_coord
 
 
 BLACK = 0,0,0
@@ -66,8 +64,8 @@ def make_view( board_data ):
 def load_pieces( radius ):
 
     radius = int(radius)
-    white_ball = pygame.image.load("/home/picklesueat/Python_projects/Abalone/View/images/cody.jpg")
-    black_ball = pygame.image.load("/home/picklesueat/Python_projects/Abalone/View/images/img.JPG")
+    white_ball = pygame.image.load("view/images/cody.jpg")
+    black_ball = pygame.image.load("view/images/img.JPG")
 
     black_ball = pygame.transform.scale(black_ball, (radius, radius))
     white_ball = pygame.transform.scale(white_ball, (radius, radius))
@@ -115,7 +113,7 @@ def hex_round( y , x ):
     return rx, ry, rz
 
 
-if __name__ == '__main__':
+def main():
     board = AbaloneBoard( 3 )
     board.add_pieces()
 
