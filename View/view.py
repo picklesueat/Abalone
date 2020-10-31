@@ -2,7 +2,7 @@ import pygame
 from math import sin,cos, sqrt, ceil,pi
 import sys
 
-from model.board import AbaloneBoard, Hex, axial_coord
+from model.board import AbaloneBoard, Hex, AxialCoords
 
 
 BLACK = 0,0,0
@@ -134,7 +134,7 @@ def main():
 
                 pos = hex_round(  ( ( sqrt(3)/3.0 * pos[0] )- 1.0/3 * pos[1] ) / radius ,  ( 2.0/3 * pos[1] )  / radius  )
 
-                pos = axial_coord( pos[1]  , pos[0]   )
+                pos = AxialCoords( pos[1]  , pos[0]   )
                 # coords = pos
                 # tile = board.get_tile(coords)
                 # direction = get_direction(prev_coords, coords)
@@ -156,7 +156,7 @@ def main():
 
                         else:
                             def subtract_axial_coords( a , b ):
-                                return axial_coord( -1 * (a.x - b.x) , -1 * (a.y - b.y) )
+                                return AxialCoords( -1 * (a.x - b.x) , -1 * (a.y - b.y) )
 
                             direction = subtract_axial_coords( prev_click[0], pos )
 

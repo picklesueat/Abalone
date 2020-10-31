@@ -1,16 +1,16 @@
 from collections import namedtuple
 
-cube_coord = namedtuple('coord', ['x','y','z'])
+CubeCoords = namedtuple('coord', ['x','y','z'])
 
 
 
-class axial_coord():
+class AxialCoords():
     def __init__( self, x , y ):
         self.x = x
         self.y = y
 
     def axial_to_cube( self ):
-        return cube_coord( self.x , self.y , -self.x - self.y )
+        return CubeCoords( self.x , self.y , -self.x - self.y )
 
     def distance( self, other ):
         cube_coords_from = self.axial_to_cube()
@@ -28,13 +28,13 @@ class axial_coord():
         return ( self.x , self.y ) == ( other.x , other.y )
 
     def __add__( self , other ):
-        return axial_coord( self.x + other.x , self.y + other.y)
+        return AxialCoords( self.x + other.x , self.y + other.y)
 
     def __sub__( self , other ):
-        return axial_coord( self.x - other.x , self.y - other.y)
+        return AxialCoords( self.x - other.x , self.y - other.y)
 
     def inverse( self ):
-        return axial_coord( self.x * -1 , self.y * -1 )
+        return AxialCoords( self.x * -1 , self.y * -1 )
 
 
 
@@ -85,22 +85,22 @@ class HexGridStorage():
 class Hex():
     def __init__( self, x_pos, y_pos, val = 0 ):
         x_pos
-        self.axial_coord = axial_coord( x_pos, y_pos )
-        self.cube_coord = cube_coord( x_pos, y_pos, -x_pos - y_pos )
+        self.axial_coord = AxialCoords( x_pos, y_pos )
+        self.cube_coord = CubeCoords( x_pos, y_pos, -x_pos - y_pos )
         self.possible_neighbors = self.get_neigh_coords( self.axial_coord )
         self.val = val
 
 
     @staticmethod
-    def get_neigh_coords( axial_coords ):
-        x,y  = axial_coords.x, axial_coords.y
+    def get_neigh_coords( AxialCoordss ):
+        x,y  = AxialCoordss.x, AxialCoordss.y
         neighbors = []
-        neighbors.append( axial_coord( x-1, y) )
-        neighbors.append( axial_coord( x+1, y) )
-        neighbors.append( axial_coord( x, y-1) )
-        neighbors.append( axial_coord( x, y+1) )
-        neighbors.append( axial_coord( x-1, y+1) )
-        neighbors.append( axial_coord( x+1, y-1) )
+        neighbors.append( AxialCoords( x-1, y) )
+        neighbors.append( AxialCoords( x+1, y) )
+        neighbors.append( AxialCoords( x, y-1) )
+        neighbors.append( AxialCoords( x, y+1) )
+        neighbors.append( AxialCoords( x-1, y+1) )
+        neighbors.append( AxialCoords( x+1, y-1) )
         return neighbors
 
     def __str__( self ):
@@ -121,11 +121,11 @@ class HexShapedBoard():
     #puts hexs in hexagonal pattern
     def make_layout( self ):
         empty_layout = HexGridStorage( self.size * 2 - 1 )
-        center = axial_coord( self.size - 1 , self.size - 1  )
+        center = AxialCoords( self.size - 1 , self.size - 1  )
 
         for i in range( self.size * 2 - 1):
             for j in range( self.size * 2 - 1):
-                coord = axial_coord( i , j )
+                coord = AxialCoords( i , j )
                 if( coord.distance( center ) < self.size):
                     empty_layout[ coord ] = Hex( i , j )
 
@@ -166,7 +166,7 @@ class HexShapedBoard():
 
         for i in range( self.size * 2 - 1):
             for j in range( self.size * 2 - 1):
-                prt += str( self[ axial_coord( j , i ) ] ) + '     '
+                prt += str( self[ AxialCoords( j , i ) ] ) + '     '
             prt += '\n'
             prt += '    ' * ( row_count)
             row_count +=1
@@ -184,11 +184,11 @@ class HexShapedBoard():
             return self
 
         def __next__( self ):
-            coord = axial_coord( self.cur_col , self.cur_row )
+            coord = AxialCoords( self.cur_col , self.cur_row )
             hex = None
 
             while hex is None:
-                coord = axial_coord( self.cur_col , self.cur_row )
+                coord = AxialCoords( self.cur_col , self.cur_row )
                 hex = self.HexGrid[ coord ]
                 self.cur_col += 1
 
@@ -220,11 +220,11 @@ class AbaloneBoard( HexShapedBoard ):
                 hex.val = AbaloneBoard.BLACK
 
         if( self.size == 3 ):
-            self[ axial_coord( 2, 1)] = AbaloneBoard.WHITE
-            self[ axial_coord( 3, 1)] = AbaloneBoard.WHITE
+            self[ AxialCoords( 2, 1)] = AbaloneBoard.WHITE
+            self[ AxialCoords( 3, 1)] = AbaloneBoard.WHITE
 
-            self[ axial_coord( 2, 3)] = AbaloneBoard.BLACK
-            self[ axial_coord( 1, 3)] = AbaloneBoard.BLACK
+            self[ AxialCoords( 2, 3)] = AbaloneBoard.BLACK
+            self[ AxialCoords( 1, 3)] = AbaloneBoard.BLACK
 
 
     def is_valid_neighbor( self , coord_from , coord_to ):
@@ -233,7 +233,7 @@ class AbaloneBoard( HexShapedBoard ):
     def is_empty_neighbor( self , coord_from , coord_to ):
         return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == 0 )
 
-    def direction_move( self, coords_from: list, direction: axial_coord ):
+    def direction_move( self, coords_from: list, direction: AxialCoords ):
         print('ffffffffffffffffff')
         def one_piece_move( coord_from , coord_to ):
             if( self.is_empty_neighbor( coord_from , coord_to ) ):
@@ -390,95 +390,95 @@ if __name__ == '__main__':
 
     # for hex in test:
     #     print( repr(hex) )
-    print( repr( test[ axial_coord( 2, 1) ] ) )
+    print( repr( test[ AxialCoords( 2, 1) ] ) )
 
-    #print( test[ axial_coord( 1 , 0 ) ].possible_neighbors )
-    #print( test.is_empty_neighbor( axial_coord( 1 , 0 ) , axial_coord( 1,1) ) )
+    #print( test[ AxialCoords( 1 , 0 ) ].possible_neighbors )
+    #print( test.is_empty_neighbor( AxialCoords( 1 , 0 ) , AxialCoords( 1,1) ) )
 
-    #print( axial_coord( 2,0 ) in [axial_coord( 1 , 0 ) , axial_coord( 2 , 0)])
+    #print( AxialCoords( 2,0 ) in [AxialCoords( 1 , 0 ) , AxialCoords( 2 , 0)])
 
-    #print( test[ axial_coord( 2 , 2 )].possible_neighbors )
+    #print( test[ AxialCoords( 2 , 2 )].possible_neighbors )
 
     # test = AbaloneBoard(3)
     # test.add_pieces()
     #
-    # #print(repr( test[ axial_coord( 0 , 3 ) ]) )
-    # test.direction_move( [ axial_coord( 0 , 2 ), axial_coord( 0 , 3 ), axial_coord( 0 , 4 ) ], axial_coord( 1, 0 ))
-    # #test.direction_move( [ axial_coord( 1 , 2 ), axial_coord( 1 , 3 ), axial_coord( 1 , 4 ) ], axial_coord( 1, 0 ))
+    # #print(repr( test[ AxialCoords( 0 , 3 ) ]) )
+    # test.direction_move( [ AxialCoords( 0 , 2 ), AxialCoords( 0 , 3 ), AxialCoords( 0 , 4 ) ], AxialCoords( 1, 0 ))
+    # #test.direction_move( [ AxialCoords( 1 , 2 ), AxialCoords( 1 , 3 ), AxialCoords( 1 , 4 ) ], AxialCoords( 1, 0 ))
 
-    # test.direction_move( [ axial_coord( 2 , 0 ), axial_coord( 3 , 0 ), axial_coord( 4 , 0 ) ], axial_coord( -1, 1 ))
-    # test.direction_move( [ axial_coord( 3 , 1 ) ], axial_coord( -1, 1 ))
+    # test.direction_move( [ AxialCoords( 2 , 0 ), AxialCoords( 3 , 0 ), AxialCoords( 4 , 0 ) ], AxialCoords( -1, 1 ))
+    # test.direction_move( [ AxialCoords( 3 , 1 ) ], AxialCoords( -1, 1 ))
     #
     #
-    # test.direction_move( [ axial_coord( 0 , 4 ), axial_coord( 1 , 4 ), axial_coord( 2 , 4 ) ], axial_coord( 1, -1 ))
-    # test.direction_move( [ axial_coord( 2 , 3 ), axial_coord( 3 , 3 ) ], axial_coord( 1, -1 ))
+    # test.direction_move( [ AxialCoords( 0 , 4 ), AxialCoords( 1 , 4 ), AxialCoords( 2 , 4 ) ], AxialCoords( 1, -1 ))
+    # test.direction_move( [ AxialCoords( 2 , 3 ), AxialCoords( 3 , 3 ) ], AxialCoords( 1, -1 ))
     #
-    # # test.direction_move( [ axial_coord( 3 , 2 ), axial_coord( 4 , 2 ) ], axial_coord( -1 , 0 ))
-    # test.direction_move( [ axial_coord( 2 , 1 ) ], axial_coord( -1 , 1 ))
+    # # test.direction_move( [ AxialCoords( 3 , 2 ), AxialCoords( 4 , 2 ) ], AxialCoords( -1 , 0 ))
+    # test.direction_move( [ AxialCoords( 2 , 1 ) ], AxialCoords( -1 , 1 ))
     #
-    # test.direction_move( [ axial_coord( 3 , 2 ), axial_coord( 4 , 2 ) ], axial_coord( -1, 0 ))
+    # test.direction_move( [ AxialCoords( 3 , 2 ), AxialCoords( 4 , 2 ) ], AxialCoords( -1, 0 ))
     #
-    # test.direction_move( [ axial_coord( 2 , 2 ), axial_coord( 3 , 2 ) ], axial_coord( -1 , 0 ))
+    # test.direction_move( [ AxialCoords( 2 , 2 ), AxialCoords( 3 , 2 ) ], AxialCoords( -1 , 0 ))
     #
-    # test.direction_move( [ axial_coord( 1 , 2 ), axial_coord( 2 , 2 ) ], axial_coord( -1 , 0 ))
+    # test.direction_move( [ AxialCoords( 1 , 2 ), AxialCoords( 2 , 2 ) ], AxialCoords( -1 , 0 ))
 
-    #test.direction_move( [ axial_coord( 2 , 2 ), axial_coord( 1 , 2  ), axial_coord( 0 , 2 ) ], axial_coord( 1, 0 ))
+    #test.direction_move( [ AxialCoords( 2 , 2 ), AxialCoords( 1 , 2  ), AxialCoords( 0 , 2 ) ], AxialCoords( 1, 0 ))
 
-    #test.direction_move( [ axial_coord( 3 , 2 ), axial_coord( 2 , 2  ), axial_coord( 1 , 2 ) ], axial_coord( 1, 0 ))
+    #test.direction_move( [ AxialCoords( 3 , 2 ), AxialCoords( 2 , 2  ), AxialCoords( 1 , 2 ) ], AxialCoords( 1, 0 ))
 
-    # test.direction_move( [ axial_coord( 1 , 0 ) ], axial_coord( -1, 1 ))
-    # test.direction_move( [ axial_coord( 2 , 0 ) ], axial_coord( -1, 1 ))
-    # #test.direction_move( [ axial_coord( 1 , 1 ) ], axial_coord( 1, 0 ))
+    # test.direction_move( [ AxialCoords( 1 , 0 ) ], AxialCoords( -1, 1 ))
+    # test.direction_move( [ AxialCoords( 2 , 0 ) ], AxialCoords( -1, 1 ))
+    # #test.direction_move( [ AxialCoords( 1 , 1 ) ], AxialCoords( 1, 0 ))
     #
-    # test.direction_move( [ axial_coord( 1 , 1 ) , axial_coord( 0 , 1 ) ], axial_coord( 1, 0 ))
+    # test.direction_move( [ AxialCoords( 1 , 1 ) , AxialCoords( 0 , 1 ) ], AxialCoords( 1, 0 ))
     #
-    # test.direction_move( [ axial_coord( 1 , 1 ) , axial_coord( 2 , 1 ) ], axial_coord( 0, -1 ))
+    # test.direction_move( [ AxialCoords( 1 , 1 ) , AxialCoords( 2 , 1 ) ], AxialCoords( 0, -1 ))
     #
-    # test.direction_move( [ axial_coord( 1 , 0 ) , axial_coord( 2 , 0 ) ], axial_coord( -1, 1 ))
+    # test.direction_move( [ AxialCoords( 1 , 0 ) , AxialCoords( 2 , 0 ) ], AxialCoords( -1, 1 ))
     #
-    # test.direction_move( [ axial_coord( 1 , 2 ) ], axial_coord( 1, -1 ))
+    # test.direction_move( [ AxialCoords( 1 , 2 ) ], AxialCoords( 1, -1 ))
     #
     #
-    # test.direction_move( [ axial_coord( 1 , 1 ) , axial_coord( 0 , 1 ) ], axial_coord( 1, 0 ))
+    # test.direction_move( [ AxialCoords( 1 , 1 ) , AxialCoords( 0 , 1 ) ], AxialCoords( 1, 0 ))
 
     print( test )
-    # test.direction_move( [ axial_coord( 4 , 0 ) ], axial_coord( -1, 0 ))
-    # # test.direction_move( [ axial_coord( 2 , 2 ), axial_coord( 2 , 3 ) ], axial_coord( 0, -1 ))
+    # test.direction_move( [ AxialCoords( 4 , 0 ) ], AxialCoords( -1, 0 ))
+    # # test.direction_move( [ AxialCoords( 2 , 2 ), AxialCoords( 2 , 3 ) ], AxialCoords( 0, -1 ))
 
 
-    #test.direction_move( [ axial_coord( 0 , 5 ), axial_coord( 0 , 6 ) ], axial_coord( 1, -1 ))
-    #test.direction_move( [ axial_coord( 0 , 5 ), axial_coord( 0 , 6 ) ], axial_coord( 1, -1 ))
+    #test.direction_move( [ AxialCoords( 0 , 5 ), AxialCoords( 0 , 6 ) ], AxialCoords( 1, -1 ))
+    #test.direction_move( [ AxialCoords( 0 , 5 ), AxialCoords( 0 , 6 ) ], AxialCoords( 1, -1 ))
 
-    #test.direction_move( [ axial_coord( 0 , 5 ), axial_coord( 0 , 6 ) ], axial_coord( 1, -1 ))
-    #test.direction_move( [ axial_coord( 1 , 4 ), axial_coord( 0 , 4 ) ], axial_coord( 1, -1 ))
+    #test.direction_move( [ AxialCoords( 0 , 5 ), AxialCoords( 0 , 6 ) ], AxialCoords( 1, -1 ))
+    #test.direction_move( [ AxialCoords( 1 , 4 ), AxialCoords( 0 , 4 ) ], AxialCoords( 1, -1 ))
 
-    # test.direction_move( [ axial_coord( 0 , 3 ) ], axial_coord( 1, -1 ))
-    # test.direction_move( [ axial_coord( 1 , 2 ) ], axial_coord( 0, 1 ))
+    # test.direction_move( [ AxialCoords( 0 , 3 ) ], AxialCoords( 1, -1 ))
+    # test.direction_move( [ AxialCoords( 1 , 2 ) ], AxialCoords( 0, 1 ))
 
 
-    # print( test.moveable( axial_coord( 0, 3 ), axial_coord( 1, 3 ) ) )
+    # print( test.moveable( AxialCoords( 0, 3 ), AxialCoords( 1, 3 ) ) )
     #
     #
-    # print( test[ axial_coord( 0, 3 ) ].possible_neighbors)
+    # print( test[ AxialCoords( 0, 3 ) ].possible_neighbors)
     #
     #
     #
     # neighs = []
     # for x in range(6):
-    #     neighs.append( axial_coord( 0 , x) )
+    #     neighs.append( AxialCoords( 0 , x) )
     #
     #
-    # print( len(axial_coord(0,1))   )
+    # print( len(AxialCoords(0,1))   )
     #
     # print('\n\n\n\n')
     # print(neighs[0] + neighs[1])
 
-    # def direction_move( self, coords_from: list, direction: axial_coord ):
-    #     def add_axial_coords( a , b ):
-    #         return axial_coord( a.x + b.x , a.y + b.y)
+    # def direction_move( self, coords_from: list, direction: AxialCoords ):
+    #     def add_AxialCoordss( a , b ):
+    #         return AxialCoords( a.x + b.x , a.y + b.y)
     #
-    #     def subtract_axial_coords( a , b ):
-    #         return axial_coord(  (a.x - b.x) , (a.y - b.y) )
+    #     def subtract_AxialCoordss( a , b ):
+    #         return AxialCoords(  (a.x - b.x) , (a.y - b.y) )
     #
     #     def one_piece_move( coord_from , coord_to ):
     #         if( self.is_empty_neighbor( coord_from , coord_to ) ):
@@ -513,9 +513,9 @@ if __name__ == '__main__':
     #         #they must be in a 'row' for any movetype
     #         if is_in_row( coords_from ):
     #             #if the move direction and row direction are the same it must be an inline move
-    #             if( direction == subtract_axial_coords( coords_from[0], coords_from[1] ) ):
+    #             if( direction == subtract_AxialCoordss( coords_from[0], coords_from[1] ) ):
     #                 print(' inline ')
-    #                 move_val = self[add_axial_coords( coords_from[0] , direction )].val
+    #                 move_val = self[add_AxialCoordss( coords_from[0] , direction )].val
     #
     #                 if( move_val == 0 ):
     #                     for coord in coords_from:
@@ -524,11 +524,11 @@ if __name__ == '__main__':
     #                 elif( move_val == 1 and self[ coords_from[ 0 ] ].val == 2 ):
     #                     push_count = 1
     #
-    #                     new_coord = add_axial_coords( coords_from[0] , direction )
+    #                     new_coord = add_AxialCoordss( coords_from[0] , direction )
     #
     #
     #                     while push_count < max(2, len( coords_from ) ):
-    #                         new_coord = add_axial_coords( new_coord , direction )
+    #                         new_coord = add_AxialCoordss( new_coord , direction )
     #
     #                         if( self[ new_coord ] is None ):
     #                             new_coord = new_coord - direction
@@ -549,8 +549,8 @@ if __name__ == '__main__':
     #
     #                         if( self[ new_coord ].val == 0 ):
     #                             for i in range( push_count + 1 ):
-    #                                 self.direction_move( [subtract_axial_coords( new_coord, direction )] , direction )
-    #                                 new_coord = subtract_axial_coords( new_coord, direction )
+    #                                 self.direction_move( [subtract_AxialCoordss( new_coord, direction )] , direction )
+    #                                 new_coord = subtract_AxialCoordss( new_coord, direction )
     #
     #                             for coord in coords_from:
     #                                 self.direction_move( [coord] , direction )
@@ -571,12 +571,12 @@ if __name__ == '__main__':
     #
     #                     push_count = 1
     #
-    #                     new_coord = add_axial_coords( coords_from[0] , direction )
+    #                     new_coord = add_AxialCoordss( coords_from[0] , direction )
     #
     #
     #
     #                     while push_count < max(2, len( coords_from ) ):
-    #                         new_coord = add_axial_coords( new_coord , direction )
+    #                         new_coord = add_AxialCoordss( new_coord , direction )
     #
     #                         if( self[ new_coord ] is None ):
     #                             new_coord = new_coord - direction
@@ -595,8 +595,8 @@ if __name__ == '__main__':
     #
     #                         if( self[ new_coord ].val == 0 ):
     #                             for i in range( push_count + 1 ):
-    #                                 self.direction_move( [subtract_axial_coords( new_coord, direction )] , direction )
-    #                                 new_coord = subtract_axial_coords( new_coord, direction )
+    #                                 self.direction_move( [subtract_AxialCoordss( new_coord, direction )] , direction )
+    #                                 new_coord = subtract_AxialCoordss( new_coord, direction )
     #
     #                             for coord in coords_from:
     #                                 self.direction_move( [coord] , direction )
@@ -618,7 +618,7 @@ if __name__ == '__main__':
     #             else:
     #                 all_moves_valid = True
     #                 for coord in coords_from:
-    #                     if( (self.is_empty_neighbor( coord, ( coord + direction ) ) ) and (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) and (self[  add_axial_coords( coord , direction ) ].val == 0) ):
+    #                     if( (self.is_empty_neighbor( coord, ( coord + direction ) ) ) and (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) and (self[  add_AxialCoordss( coord , direction ) ].val == 0) ):
     #                         pass
     #                     else:
     #                         all_moves_valid = False
@@ -626,7 +626,7 @@ if __name__ == '__main__':
     #
     #                 if( all_moves_valid ):
     #                     for coord_from in coords_from:
-    #                         coord_to = add_axial_coords( coord_from , direction )
+    #                         coord_to = add_AxialCoordss( coord_from , direction )
     #                         #
     #                         # print('move')
     #                         # print('from: ', coord_from )
