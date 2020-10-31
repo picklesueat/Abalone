@@ -1,6 +1,6 @@
 from collections import namedtuple
 
-CubeCoords = namedtuple('coord', ['x','y','z'])
+CubeCoords = namedtuple('CubeCoords', ['x','y','z'])
 
 
 
