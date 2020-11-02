@@ -2,8 +2,6 @@ from collections import namedtuple
 
 cube_coord = namedtuple('coord', ['x','y','z'])
 
-
-
 class axial_coord():
     def __init__( self, x , y ):
         self.x = x
@@ -88,6 +86,7 @@ class Hex():
         self.axial_coord = axial_coord( x_pos, y_pos )
         self.cube_coord = cube_coord( x_pos, y_pos, -x_pos - y_pos )
         self.possible_neighbors = self.get_neigh_coords( self.axial_coord )
+        self.half_neighbors = self.get_half_neigh_coords( self.axial_coord )
         self.val = val
 
 
@@ -95,13 +94,27 @@ class Hex():
     def get_neigh_coords( axial_coords ):
         x,y  = axial_coords.x, axial_coords.y
         neighbors = []
-        neighbors.append( axial_coord( x-1, y) )
         neighbors.append( axial_coord( x+1, y) )
-        neighbors.append( axial_coord( x, y-1) )
         neighbors.append( axial_coord( x, y+1) )
         neighbors.append( axial_coord( x-1, y+1) )
+
+        neighbors.append( axial_coord( x-1, y) )
+
+        neighbors.append( axial_coord( x, y-1) )
+
         neighbors.append( axial_coord( x+1, y-1) )
         return neighbors
+
+    @staticmethod
+    def get_half_neigh_coords( axial_coords ):
+        x,y  = axial_coords.x, axial_coords.y
+        neighbors = []
+        neighbors.append( axial_coord( x+1, y) )
+        neighbors.append( axial_coord( x, y+1) )
+        neighbors.append( axial_coord( x-1, y+1) )
+
+        return neighbors
+
 
     def __str__( self ):
         return str( self.val )
@@ -114,19 +127,19 @@ class Hex():
 class HexShapedBoard():
     def __init__( self, size ):
         self.size = size
+        self.center = axial_coord( self.size - 1 , self.size - 1  )
         self.layout = self.make_layout()
         self.update_neighbors()  #this is weird but I'm not sure where else to put this
-
 
     #puts hexs in hexagonal pattern
     def make_layout( self ):
         empty_layout = HexGridStorage( self.size * 2 - 1 )
-        center = axial_coord( self.size - 1 , self.size - 1  )
+
 
         for i in range( self.size * 2 - 1):
             for j in range( self.size * 2 - 1):
                 coord = axial_coord( i , j )
-                if( coord.distance( center ) < self.size):
+                if( coord.distance( self.center ) < self.size):
                     empty_layout[ coord ] = Hex( i , j )
 
 
@@ -143,6 +156,19 @@ class HexShapedBoard():
             ind_neigh_to_remove.reverse()
             for i in ind_neigh_to_remove:
                 del hex.possible_neighbors[i]
+
+            ind_neigh_to_remove = []
+
+
+        ind_neigh_to_remove = []
+        for hex in self:
+            for ind_neighbor in range ( len( hex.half_neighbors)):
+                if( hex.half_neighbors[ ind_neighbor ] not in hex.possible_neighbors ):
+                    ind_neigh_to_remove.append( ind_neighbor )
+
+            ind_neigh_to_remove.reverse()
+            for i in ind_neigh_to_remove:
+                del hex.half_neighbors[i]
 
             ind_neigh_to_remove = []
 
@@ -210,7 +236,6 @@ class AbaloneBoard( HexShapedBoard ):
     EMPTY = 0
 
 
-    #only setup for 2 right now
     def add_pieces( self ):
         for hex in self:
             if( hex.axial_coord.y == 0 ):
@@ -226,24 +251,195 @@ class AbaloneBoard( HexShapedBoard ):
             self[ axial_coord( 2, 3)] = AbaloneBoard.BLACK
             self[ axial_coord( 1, 3)] = AbaloneBoard.BLACK
 
-
     def is_valid_neighbor( self , coord_from , coord_to ):
         return (coord_to) in self[ coord_from ].possible_neighbors
 
     def is_empty_neighbor( self , coord_from , coord_to ):
         return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == 0 )
 
-    def direction_move( self, coords_from: list, direction: axial_coord ):
-        print('ffffffffffffffffff')
-        def one_piece_move( coord_from , coord_to ):
+    def move_generation( self , player ):
+        assert player == AbaloneBoard.WHITE or player == AbaloneBoard.BLACK
+
+
+        piece_formations = []
+
+        #only use half of the directions so as not to double count
+
+        for hex in self:
+            if ( hex.val == player ):
+                piece_formations.append( [hex.axial_coord] )
+
+                for neigh in hex.half_neighbors:
+                    if ( self[ neigh ].val == player):
+                        piece_formations.append( [hex.axial_coord , neigh ] )
+
+                        neigh_2 = (neigh - hex.axial_coord) + neigh
+                        if( self[ neigh_2 ] is not None ):
+                            if ( self[ neigh_2 ].val == player):
+                                piece_formations.append( [hex.axial_coord , neigh , neigh_2 ] )
+
+
+        move_list = []
+
+        directions = [ axial_coord( 1 , 0 ) , axial_coord( -1 , 0 ) , axial_coord( 0 , 1 ) , axial_coord( 0 , -1 ) , axial_coord( 1 , -1 ) , axial_coord( -1 , 1 ) ]
+
+        for group in piece_formations:
+            for direction in directions:
+                move_type = self.direction_move_checker( group, direction)
+                if( move_type ):
+                    move_list.append( [group, direction, move_type  ])
+
+
+        return move_list
+
+    def direction_move_checker( self , coords_from: list, direction: axial_coord ):
+        def push_checker():
+            coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
+
+            push_count = 1
+            if( coord_to_val == AbaloneBoard.BLACK ):
+                coord_from_val = AbaloneBoard.WHITE
+
+            else:
+                coord_from_val = AbaloneBoard.BLACK
+
+            while push_count < max(2, len( coords_from ) ):
+                coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
+
+                if( self[ coord_to ] is None ):
+                    return 'point'
+
+
+                if( self[ coord_to ].val == coord_to_val ):
+                    push_count += 1
+
+                if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+                    return 'push'
+
+
+
+                if ( self[ coord_to ].val == coord_from_val ):
+                    break
+
+
+        if ( len( coords_from ) == 1 ):
+            coord_from = coords_from[0]
+            coord_to = coord_from + direction
             if( self.is_empty_neighbor( coord_from , coord_to ) ):
+                return True, 'one'
+
+        elif ( 2 <= len( coords_from ) <= 3  ):
+            if( direction == ( coords_from[0] - coords_from[1] ) ):
+                coord_to = ( coords_from[0] + direction )
+
+                if( self[ coord_to ] is None ):
+                    return None
+
+                coord_to_val = self[ coord_to ].val
+
+
+                if( coord_to_val == AbaloneBoard.EMPTY  ):
+                    for coord in coords_from:
+                        if (self.direction_move_checker( [coord] , direction )):
+                            return False
+                    return True
+
+                #defines a 'push' move
+                elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
+                        return push_checker()
+
+            #broadside move
+            else:
+                all_moves_valid = True
+                for coord in coords_from:
+                    if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
+                        all_moves_valid = False
+                        break
+
+
+                    if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
+                        all_moves_valid = False
+                        break
+
+
+                    if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
+                        all_moves_valid = False
+                        break
+                return all_moves_valid
+
+
+
+    def direction_move( self, coords_from: list, direction: axial_coord ):
+        def one_piece_move_validator( coord_from , coord_to ):
+            if( self.is_empty_neighbor( coord_from , coord_to ) ):
+                return True
+            return False
+
+        def one_piece_move_maker( coord_from , coord_to ):
+            temp_val = self[ coord_from ].val
+            self[ coord_from ] = self[ coord_to ].val
+            self[ coord_to ] = temp_val
+
+        def broadside_move_validator():
+            all_moves_valid = True
+            for coord in coords_from:
+                if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
+                    all_moves_valid = False
+                    break
+
+
+                if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
+                    all_moves_valid = False
+                    break
+
+
+                if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
+                    all_moves_valid = False
+                    break
+            return all_moves_valid
+
+        def broadside_move_maker():
+            for coord_from in coords_from:
+                coord_to = ( coord_from + direction )
+
                 temp_val = self[ coord_from ].val
                 self[ coord_from ] = self[ coord_to ].val
                 self[ coord_to ] = temp_val
-                return True #move was made
+
+            return True
 
 
-        def push():
+        def push_move_validator():
+            coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
+
+            push_count = 1
+            if( coord_to_val == AbaloneBoard.BLACK ):
+                coord_from_val = AbaloneBoard.WHITE
+
+            else:
+                coord_from_val = AbaloneBoard.BLACK
+
+            while push_count < max(2, len( coords_from ) ):
+                coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
+
+                if( self[ coord_to ] is None ):
+                    return 'point'
+
+
+                if( self[ coord_to ].val == coord_to_val ):
+                    push_count += 1
+
+                if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+                    return True
+
+
+
+                if ( self[ coord_to ].val == coord_from_val ):
+                    break
+
+
+
+        def push_move_maker():
             coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
 
             push_count = 1
@@ -269,8 +465,6 @@ class AbaloneBoard( HexShapedBoard ):
 
                     self[ prev_coord ] = AbaloneBoard.EMPTY
 
-                    return 'push'
-
                     break
 
                 if( self[ coord_to ].val == coord_to_val ):
@@ -284,8 +478,6 @@ class AbaloneBoard( HexShapedBoard ):
                     for coord in coords_from:
                         self.direction_move( [coord] , direction )
 
-                    return True
-
                     break
 
 
@@ -294,7 +486,7 @@ class AbaloneBoard( HexShapedBoard ):
 
 
 
-        def is_in_row( coords: list ):
+        def validate_coords_from( coords: list ):
             direction = coords[ 0 ] - coords[ 1 ]
 
             #if any of the conditions of false for any pair of neighboring points in the list then the points can't be in a row
@@ -313,25 +505,38 @@ class AbaloneBoard( HexShapedBoard ):
 
 
 
-        assert max( direction.x ,  direction.y ) <= 1
-        assert min( direction.x , direction.y ) >= -1
-        assert -2 < direction.x + direction.y < 2
-        print('ffff')
+        if not max( direction.x ,  direction.y ) <= 1:
+            return None
+        if not min( direction.x , direction.y ) >= -1:
+            return None
+
+        if not -2 < direction.x + direction.y < 2: #also janky
+            return None
+
         #one_piece_move
         if ( len( coords_from ) == 1 ):
             coord_from = coords_from[0]
             coord_to = coord_from + direction
-            print('fi')
-            return one_piece_move( coord_from, coord_to )
+
+            if( one_piece_move_validator( coord_from , coord_to ) ):
+                one_piece_move_maker( coord_from , coord_to )
+                return True
+
+            else:
+                return False
+
 
 
         elif ( 2 <= len( coords_from ) <= 3  ):
             #they must be in a 'row' for any other movetype
-            if is_in_row( coords_from ):
+            if validate_coords_from( coords_from ):
 
                 #if the move direction and row direction are the same it must be an inline move (technically subset)
                 if( direction == ( coords_from[0] - coords_from[1] ) ):
                     coord_to = ( coords_from[0] + direction )
+                    if( self[ coord_to ] is None ):
+                        return None
+
                     coord_to_val = self[ coord_to ].val
 
                     if( coord_to_val == AbaloneBoard.EMPTY  ):
@@ -341,38 +546,27 @@ class AbaloneBoard( HexShapedBoard ):
 
                     #defines a 'push' move
                     elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
-                            return push()
+
+                        push_outcome = push_move_validator()
+
+                        if( push_outcome ):
+                            push_move_maker()
+                            return push_outcome
+
+                        else:
+                            return False
 
                 #broadside move
                 else:
-                    all_moves_valid = True
-                    for coord in coords_from:
-                        if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
-                            all_moves_valid = False
-                            break
-
-
-                        if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
-                            all_moves_valid = False
-                            break
-
-
-                        if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
-                            all_moves_valid = False
-                            break
-
-
-
-
-                    if( all_moves_valid ):
-                        for coord_from in coords_from:
-                            coord_to = ( coord_from + direction )
-
-                            temp_val = self[ coord_from ].val
-                            self[ coord_from ] = self[ coord_to ].val
-                            self[ coord_to ] = temp_val
-
+                    if( broadside_move_validator() ):
+                        broadside_move_maker()
                         return True
+
+
+                    else:
+                        return False
+
+
 
 
 
@@ -386,11 +580,16 @@ class AbaloneBoard( HexShapedBoard ):
 if __name__ == '__main__':
     test = AbaloneBoard( 3 )
     test.add_pieces()
-    #test.update_neighbors()
 
-    # for hex in test:
-    #     print( repr(hex) )
-    print( repr( test[ axial_coord( 2, 1) ] ) )
+    print( test.direction_move( [ axial_coord( 0, 4)  ], axial_coord( 0 , -1 ) ) )
+    x = test.move_generation( 2 )
+    for move in x:
+        print( move )
+    # #test.update_neighbors()
+    #
+    # # for hex in test:
+    # #     print( repr(hex) )
+    # print( repr( test[ axial_coord( 2, 1) ] ) )
 
     #print( test[ axial_coord( 1 , 0 ) ].possible_neighbors )
     #print( test.is_empty_neighbor( axial_coord( 1 , 0 ) , axial_coord( 1,1) ) )

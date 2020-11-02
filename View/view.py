@@ -2,20 +2,13 @@ import pygame
 from math import sin,cos, sqrt, ceil,pi
 import sys
 
+
+
 sys.path.insert(1, "/home/picklesueat/Python_projects/Abalone/Model/")
+sys.path.insert(1, "/home/picklesueat/Python_projects/Abalone/")
 
 from board import AbaloneBoard, Hex, axial_coord
-
-
-BLACK = 0,0,0
-WHITE = 200,200,200
-SCREEN_SIZE = WIDTH, HEIGHT = 1800,1000
-pygame.init()
-
-screen = pygame.display.set_mode(SCREEN_SIZE)
-
-screen.fill(WHITE)
-
+from controller import Game, Controller
 
 
 class HexView():
@@ -41,33 +34,27 @@ def draw_hexagon(Surface,  radius, position):
 #dependent on the data structure, but it doesn't have to be, all it needs is a Data type containing the cubic indices and values of the coordinates to map
 def make_view( board_data ):
     hexs = []
-    black_pieces = {}
-    white_pieces = {}
+
     radius = min(SCREEN_SIZE)/ ((len( board_data ) * 3 ))
 
-    screen_center = (SCREEN_SIZE[0]/2, SCREEN_SIZE[1]/2)
-    board_offset = ( screen_center[0] - (radius * len(board_data)) , screen_center[1]- (radius * len(board_data) * 2/3 ) )   #offset of top left corner of board from (0,0)
+    x_offset = 200
+    y_offset = 50* (7 - board_data.size)
+
     for hex in board_data:
-        y = (hex.axial_coord.y * radius * 3 /2) #+ board_offset[1]
-        x = (sqrt(3) * radius * ( hex.axial_coord.y/2 + hex.axial_coord.x)) #+ board_offset[0]
+        y = (hex.axial_coord.y * radius * 3 /2) + y_offset
+        x = (sqrt(3) * radius * ( hex.axial_coord.y/2 + hex.axial_coord.x))  + x_offset
         hexs.append(HexView( radius , x , y, hex.val  ))
 
 
-        if( hex.val == 1):
-            black_pieces[( hex.axial_coord.x , hex.axial_coord.y )] = True
 
-
-        if( hex.val == 2):
-            white_pieces[( hex.axial_coord.x , hex.axial_coord.y )] = True
-
-    return hexs, black_pieces, white_pieces
+    return hexs
 
 
 def load_pieces( radius ):
 
     radius = int(radius)
-    white_ball = pygame.image.load("/home/picklesueat/Python_projects/Abalone/View/images/cody.jpg")
-    black_ball = pygame.image.load("/home/picklesueat/Python_projects/Abalone/View/images/img.JPG")
+    white_ball = pygame.image.load("/home/picklesueat/Python_projects/Abalone/View/images/white_ball.jpg")
+    black_ball = pygame.image.load("/home/picklesueat/Python_projects/Abalone/View/images/black_ball.jpg")
 
     black_ball = pygame.transform.scale(black_ball, (radius, radius))
     white_ball = pygame.transform.scale(white_ball, (radius, radius))
@@ -77,12 +64,13 @@ def load_pieces( radius ):
 def display_view( hex_lst ):
     white_ball, black_ball = load_pieces( hex_lst[0].radius )
 
+
     for hex_view in hex_lst:
         draw_hexagon( screen, hex_view.radius, ( hex_view.x , hex_view.y ) )
-        if( hex_view.val == 1 ):
+        if( hex_view.val == 2 ):
             screen.blit(white_ball, (hex_view.x - hex_view.radius / 2 , hex_view.y - hex_view.radius / 2 ))
 
-        if( hex_view.val == 2 ):
+        if( hex_view.val == 1 ):
             screen.blit( black_ball, (hex_view.x - hex_view.radius / 2 , hex_view.y - hex_view.radius / 2 ))
 
     pygame.display.flip()
@@ -93,7 +81,7 @@ def display_view( hex_lst ):
 
 
 # collections.NamedTuple
-def hex_round( y , x ):
+def hex_round( x , y ):
     z = -x - y
     rx = round(x)
     ry = round(y)
@@ -112,18 +100,51 @@ def hex_round( y , x ):
         rz = -rx-ry
 
 
-    return rx, ry, rz
+    return rx, ry
+
+def pixel_to_hex( pos ):
+    x = ( ( sqrt(3)/3.0 * pos[0] )- 1.0/3 * pos[1] ) / radius
+    y = ( 2.0/3 * pos[1] )  / radius
+
+    return ( x , y )
+
+
+def update_board( ):
+    screen.fill(WHITE)
+    hexs = make_view( cont.game )
+
+
+    radius = display_view( hexs )
+    cont.updated = False
+
+    return radius
 
 
 if __name__ == '__main__':
-    board = AbaloneBoard( 3 )
-    board.add_pieces()
+    BLACK = 0,0,0
+    WHITE = 200,200,200
+    SCREEN_SIZE = WIDTH, HEIGHT = 1800,1000
 
-    hexs, black_pieces, white_pieces = make_view( board )
-    radius = display_view( hexs )
+    pygame.init()
+    screen = pygame.display.set_mode(SCREEN_SIZE)
+
+
+    cont = Controller( 3 , two_player = False )
+
+    radius = update_board()
+
+
     prev_click = []
 
     while True:
+        pygame.time.delay( 100 )
+
+        if( cont.game.two_player == False ):
+            if( cont.game.turn == 1 ):
+                cont.make_AI_move()
+                update_board()
+
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT: sys.exit()
 
@@ -134,60 +155,21 @@ if __name__ == '__main__':
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
-                pos = hex_round(  ( ( sqrt(3)/3.0 * pos[0] )- 1.0/3 * pos[1] ) / radius ,  ( 2.0/3 * pos[1] )  / radius  )
+                pos = ( pos[0] - 200, pos[1] - 50* (7 - cont.size ))
 
-                pos = axial_coord( pos[1]  , pos[0]   )
-                # coords = pos
-                # tile = board.get_tile(coords)
-                # direction = get_direction(prev_coords, coords)
-                # board.move(tile, direction)
-                # and then this will call something
+                pos = axial_coord( *hex_round(  *pixel_to_hex( pos )  ) )
 
-                if( board[ pos ] is not None ):
-                    if prev_click :
-                        if ( white_pieces.get( (pos.x, pos.y ), False ) and ( player_move == board[ pos ].val ) ):
-                                prev_click.append(pos)
+                if( cont.is_valid_click( pos ) ):
+                    if cont.prev_click_coords :
+                        cont.take_click( pos )
 
-
-
-
-                        elif (  black_pieces.get( (pos.x, pos.y ), False ) and ( player_move == board[ pos ].val ) ):
-                                prev_click.append(pos)
-
-
-
-                        else:
-                            def subtract_axial_coords( a , b ):
-                                return axial_coord( -1 * (a.x - b.x) , -1 * (a.y - b.y) )
-
-                            direction = subtract_axial_coords( prev_click[0], pos )
-
-
-
-
-                            if( -1  <= direction.x <= 1 and -1 <= direction.y <= 1 and -1 <= direction.x + direction.y <= 1 ):
-                                # Use NamedTuple
-                                # prev_click.xm prev_click.y
-                                #board.make_move( prev_click , pos )
-
-                                # print( '\n\n\n')
-                                # print('real direction')
-                                # print( direction )
-
-                                board.direction_move( prev_click , direction )
-                                prev_click = []
-
-                                screen.fill(WHITE)
-                                hexs, white_pieces, black_pieces = make_view( board )
-                                radius = display_view( hexs )
+                        if( cont.updated ):
+                            update_board()
 
 
 
 
                     else:
-                        pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
-                        pygame.display.flip()
-
-                        prev_click.append( pos )
-                        if( board[ pos ].val != 0  ):
-                            player_move = board[ pos ].val
+                        if cont.take_first_click( pos ):
+                            pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
+                            pygame.display.flip()
