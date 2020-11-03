@@ -1,10 +1,13 @@
+print(__file__, __name__)
+
 import pygame
 from math import sin,cos, sqrt, ceil,pi
 import sys
+import os
 
-from model.board import AbaloneBoard, Hex, AxialCoords
+from abalone.model.board import AbaloneBoard, Hex, AxialCoords
 
-
+IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'Images')
 BLACK = 0,0,0
 WHITE = 200,200,200
 SCREEN_SIZE = WIDTH, HEIGHT = 1800,1000
@@ -64,8 +67,8 @@ def make_view( board_data ):
 def load_pieces( radius ):
 
     radius = int(radius)
-    white_ball = pygame.image.load("view/images/cody.jpg")
-    black_ball = pygame.image.load("view/images/img.JPG")
+    white_ball = pygame.image.load(os.path.join(IMAGES_DIR, "cody.jpg"))
+    black_ball = pygame.image.load(os.path.join(IMAGES_DIR, "img.JPG"))
 
     black_ball = pygame.transform.scale(black_ball, (radius, radius))
     white_ball = pygame.transform.scale(white_ball, (radius, radius))

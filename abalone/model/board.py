@@ -1,8 +1,8 @@
+print(__file__, __name__)
+
 from collections import namedtuple
 
 CubeCoords = namedtuple('CubeCoords', ['x','y','z'])
-
-
 
 class AxialCoords():
     def __init__( self, x , y ):
