@@ -6,16 +6,17 @@ import sys
 import os
 
 from abalone.model.board import AbaloneBoard, Hex, AxialCoords
+from abalone import BLACK, WHITE, EMPTY
 
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'Images')
-BLACK = 0,0,0
-WHITE = 200,200,200
+COLOR_BLACK = 0,0,0
+COLOR_WHITE = 200,200,200
 SCREEN_SIZE = WIDTH, HEIGHT = 1800,1000
 pygame.init()
 
 screen = pygame.display.set_mode(SCREEN_SIZE)
 
-screen.fill(WHITE)
+screen.fill(COLOR_WHITE)
 
 
 
@@ -34,7 +35,7 @@ def draw_hexagon(Surface,  radius, position):
     pi2 = 2 * pi
 
     return pygame.draw.lines(Surface,
-          BLACK,
+          COLOR_BLACK,
           True,
           [(cos(i / 6 * pi2 + ( pi2 / 4)) * radius + position[0], sin(i / 6 * pi2 + ( pi2 / 4)) * radius + position[1]) for i in range(0, 6)])
 
@@ -54,11 +55,11 @@ def make_view( board_data ):
         hexs.append(HexView( radius , x , y, hex.val  ))
 
 
-        if( hex.val == 1):
+        if( hex.val == BLACK):
             black_pieces[( hex.axial_coord.x , hex.axial_coord.y )] = True
 
 
-        if( hex.val == 2):
+        if( hex.val == WHITE):
             white_pieces[( hex.axial_coord.x , hex.axial_coord.y )] = True
 
     return hexs, black_pieces, white_pieces
@@ -80,10 +81,10 @@ def display_view( hex_lst ):
 
     for hex_view in hex_lst:
         draw_hexagon( screen, hex_view.radius, ( hex_view.x , hex_view.y ) )
-        if( hex_view.val == 1 ):
+        if( hex_view.val == WHITE ):
             screen.blit(white_ball, (hex_view.x - hex_view.radius / 2 , hex_view.y - hex_view.radius / 2 ))
 
-        if( hex_view.val == 2 ):
+        if( hex_view.val == BLACK ):
             screen.blit( black_ball, (hex_view.x - hex_view.radius / 2 , hex_view.y - hex_view.radius / 2 ))
 
     pygame.display.flip()
@@ -118,7 +119,9 @@ def hex_round( y , x ):
 
 def main():
     board = AbaloneBoard( 3 )
+    print(board)
     board.add_pieces()
+    print(board)
 
     hexs, black_pieces, white_pieces = make_view( board )
     radius = display_view( hexs )
@@ -178,7 +181,7 @@ def main():
                                 board.direction_move( prev_click , direction )
                                 prev_click = []
 
-                                screen.fill(WHITE)
+                                screen.fill(COLOR_WHITE)
                                 hexs, white_pieces, black_pieces = make_view( board )
                                 radius = display_view( hexs )
 
@@ -190,5 +193,5 @@ def main():
                         pygame.display.flip()
 
                         prev_click.append( pos )
-                        if( board[ pos ].val != 0  ):
+                        if( board[ pos ].val != EMPTY  ):
                             player_move = board[ pos ].val

@@ -2,6 +2,8 @@ print(__file__, __name__)
 
 from collections import namedtuple
 
+from abalone import BLACK, WHITE, EMPTY
+
 CubeCoords = namedtuple('CubeCoords', ['x','y','z'])
 
 class AxialCoords():
@@ -83,7 +85,7 @@ class HexGridStorage():
 
 #hex to be placed on valid board squares, helps precompute values
 class Hex():
-    def __init__( self, x_pos, y_pos, val = 0 ):
+    def __init__( self, x_pos, y_pos, val = EMPTY ):
         x_pos
         self.axial_coord = AxialCoords( x_pos, y_pos )
         self.cube_coord = CubeCoords( x_pos, y_pos, -x_pos - y_pos )
@@ -205,33 +207,29 @@ class HexShapedBoard():
 
 #adds pieces and rules for abalone to hex board
 class AbaloneBoard( HexShapedBoard ):
-    WHITE = 2
-    BLACK = 1
-    EMPTY = 0
-
 
     #only setup for 2 right now
     def add_pieces( self ):
         for hex in self:
             if( hex.axial_coord.y == 0 ):
-                hex.val = AbaloneBoard.WHITE
+                hex.val = WHITE
 
             if( hex.axial_coord.y == self.size * 2 - 1 - 1 ):
-                hex.val = AbaloneBoard.BLACK
+                hex.val = BLACK
 
         if( self.size == 3 ):
-            self[ AxialCoords( 2, 1)] = AbaloneBoard.WHITE
-            self[ AxialCoords( 3, 1)] = AbaloneBoard.WHITE
+            self[ AxialCoords( 2, 1)] = WHITE
+            self[ AxialCoords( 3, 1)] = WHITE
 
-            self[ AxialCoords( 2, 3)] = AbaloneBoard.BLACK
-            self[ AxialCoords( 1, 3)] = AbaloneBoard.BLACK
+            self[ AxialCoords( 2, 3)] = BLACK
+            self[ AxialCoords( 1, 3)] = BLACK
 
 
     def is_valid_neighbor( self , coord_from , coord_to ):
         return (coord_to) in self[ coord_from ].possible_neighbors
 
     def is_empty_neighbor( self , coord_from , coord_to ):
-        return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == 0 )
+        return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == EMPTY )
 
     def direction_move( self, coords_from: list, direction: AxialCoords ):
         print('ffffffffffffffffff')
@@ -247,11 +245,11 @@ class AbaloneBoard( HexShapedBoard ):
             coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
 
             push_count = 1
-            if( coord_to_val == AbaloneBoard.BLACK ):
-                coord_from_val = AbaloneBoard.WHITE
+            if( coord_to_val == BLACK ):
+                coord_from_val = WHITE
 
             else:
-                coord_from_val = AbaloneBoard.BLACK
+                coord_from_val = BLACK
 
             while push_count < max(2, len( coords_from ) ):
                 coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
@@ -267,7 +265,7 @@ class AbaloneBoard( HexShapedBoard ):
                         coord_to = prev_coord
 
 
-                    self[ prev_coord ] = AbaloneBoard.EMPTY
+                    self[ prev_coord ] = EMPTY
 
                     return 'push'
 
@@ -276,7 +274,7 @@ class AbaloneBoard( HexShapedBoard ):
                 if( self[ coord_to ].val == coord_to_val ):
                     push_count += 1
 
-                if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+                if( self[ coord_to ].val == EMPTY ):
                     for i in range( push_count + 1 ):
                         self.direction_move( [ ( coord_to - direction ) ] , direction )
                         coord_to = ( coord_to - direction )
@@ -334,7 +332,7 @@ class AbaloneBoard( HexShapedBoard ):
                     coord_to = ( coords_from[0] + direction )
                     coord_to_val = self[ coord_to ].val
 
-                    if( coord_to_val == AbaloneBoard.EMPTY  ):
+                    if( coord_to_val == EMPTY  ):
                         for coord in coords_from:
                             self.direction_move( [coord] , direction )
                         return True
@@ -352,12 +350,12 @@ class AbaloneBoard( HexShapedBoard ):
                             break
 
 
-                        if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
+                        if( not (self[ coord ].val == WHITE or self[ coord ].val == BLACK) ):
                             all_moves_valid = False
                             break
 
 
-                        if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
+                        if( not (self[ ( coord + direction ) ].val == EMPTY) ):
                             all_moves_valid = False
                             break
 
@@ -618,7 +616,7 @@ if __name__ == '__main__':
     #             else:
     #                 all_moves_valid = True
     #                 for coord in coords_from:
-    #                     if( (self.is_empty_neighbor( coord, ( coord + direction ) ) ) and (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) and (self[  add_AxialCoordss( coord , direction ) ].val == 0) ):
+    #                     if( (self.is_empty_neighbor( coord, ( coord + direction ) ) ) and (self[ coord ].val == WHITE or self[ coord ].val == BLACK) and (self[  add_AxialCoordss( coord , direction ) ].val == EMPTY) ):
     #                         pass
     #                     else:
     #                         all_moves_valid = False
