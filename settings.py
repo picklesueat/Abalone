@@ -1,0 +1,2 @@
+WHITE = 2
+BLACK = 1

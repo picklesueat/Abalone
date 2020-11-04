@@ -235,21 +235,11 @@ class AbaloneBoard( HexShapedBoard ):
     BLACK = 1
     EMPTY = 0
 
-
-    def add_pieces( self ):
-        for hex in self:
-            if( hex.axial_coord.y == 0 ):
-                hex.val = AbaloneBoard.WHITE
-
-            if( hex.axial_coord.y == self.size * 2 - 1 - 1 ):
-                hex.val = AbaloneBoard.BLACK
-
-        if( self.size == 3 ):
-            self[ axial_coord( 2, 1)] = AbaloneBoard.WHITE
-            self[ axial_coord( 3, 1)] = AbaloneBoard.WHITE
-
-            self[ axial_coord( 2, 3)] = AbaloneBoard.BLACK
-            self[ axial_coord( 1, 3)] = AbaloneBoard.BLACK
+    #Move Types
+    INVALID = 0
+    VALID = 1
+    PUSH  = 2
+    POINT = 3
 
     def is_valid_neighbor( self , coord_from , coord_to ):
         return (coord_to) in self[ coord_from ].possible_neighbors
@@ -257,10 +247,253 @@ class AbaloneBoard( HexShapedBoard ):
     def is_empty_neighbor( self , coord_from , coord_to ):
         return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == 0 )
 
-    def move_generation( self , player ):
-        assert player == AbaloneBoard.WHITE or player == AbaloneBoard.BLACK
+
+    def is_valid_one_piece_move( self , coord_from , coord_to ):
+        if( self.is_empty_neighbor( coord_from , coord_to ) ):
+            return AbaloneBoard.VALID
+        return AbaloneBoard.INVALID
+
+    def make_one_piece_move( self , coord_from , coord_to ):
+        temp_val = self[ coord_from ].val
+        self[ coord_from ] = self[ coord_to ].val
+        self[ coord_to ] = temp_val
 
 
+    def is_in_row( self , coords: list ):  #checks if the list of coords is in a row, and of the same type
+        direction = coords[ 0 ] - coords[ 1 ]
+
+        for i in range( len(coords) - 1 ):
+            if( (coords[i] - coords[ i + 1 ] ) != direction ):  #same direction
+                return False
+
+            if(self[ coords[ i ] ].val != self[ coords[ i+1 ] ].val): #same color
+                return False
+
+            if( not self.is_valid_neighbor( coords[i] , coords[ i+1 ] ) ): #neighbors
+                return False
+
+        return True
+
+    def is_valid_broadside_move( self , coords_from: list , direction: axial_coord ):
+        all_moves_valid = True
+        for coord in coords_from:
+            if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
+                all_moves_valid = False
+                break
+
+
+            if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
+                all_moves_valid = False
+                break
+
+
+            if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
+                all_moves_valid = False
+                break
+
+        if all_moves_valid :
+            return AbaloneBoard.VALID
+        return AbaloneBoard.INVALID
+
+
+    def make_broadside_move( self , coords_from: list , direction: axial_coord ):
+        for coord_from in coords_from:
+            coord_to = ( coord_from + direction )
+
+            temp_val = self[ coord_from ].val
+            self[ coord_from ] = self[ coord_to ].val
+            self[ coord_to ] = temp_val
+
+    def is_valid_push_move( self , coords_from , direction ):
+        coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
+        coord_to_val = self[ coord_to ].val
+
+        push_count = 1
+        if( coord_to_val == AbaloneBoard.BLACK ):
+            coord_from_val = AbaloneBoard.WHITE
+
+        else:
+            coord_from_val = AbaloneBoard.BLACK
+
+        while push_count < max(2, len( coords_from ) ):
+            coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
+
+            if( self[ coord_to ] is None ):
+                return AbaloneBoard.POINT
+
+
+            if( self[ coord_to ].val == coord_to_val ):
+                push_count += 1
+
+            if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+                return AbaloneBoard.VALID
+
+
+
+            if ( self[ coord_to ].val == coord_from_val ):
+                return AbaloneBoard.INVALID
+
+        return AbaloneBoard.INVALID
+
+    def make_push_move( self , coords_from , direction ):
+        coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
+        coord_to_val = self[ coord_to ].val
+
+        push_count = 1
+        if( coord_to_val == AbaloneBoard.BLACK ):
+            coord_from_val = AbaloneBoard.WHITE
+        else:
+            coord_from_val = AbaloneBoard.BLACK
+        while push_count < max(2, len( coords_from ) ):
+            coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
+            if( self[ coord_to ] is None ):
+                #we need to get back on the board
+                coord_to = coord_to - direction
+                for i in range( push_count + len(coords_from) - 1 ):
+                    prev_coord = coord_to - direction
+                    temp_val = self[ prev_coord ].val
+                    self[ coord_to ] = temp_val
+                    coord_to = prev_coord
+                self[ prev_coord ] = AbaloneBoard.EMPTY
+                break
+            if( self[ coord_to ].val == coord_to_val ):
+                push_count += 1
+            if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+                for i in range( push_count + 1 ):
+                    self.direction_move( [ ( coord_to - direction ) ] , direction )
+                    coord_to = ( coord_to - direction )
+                for coord in coords_from:
+                    self.direction_move( [coord] , direction )
+                break
+            if ( self[ coord_to ].val == coord_from_val ):
+                break
+
+    @staticmethod
+    def is_valid_direction( direction ):
+        if not max( direction.x ,  direction.y ) <= 1:
+            return False
+        if not min( direction.x , direction.y ) >= -1:
+            return False
+        if not -2 < direction.x + direction.y < 2:
+            return False
+
+        return True
+
+
+    def is_valid_move( self , coords_from: list, direction: axial_coord ):
+        if not self.is_valid_direction( direction ):
+            return AbaloneBoard.INVALID
+
+        num_pieces_to_move = len( coords_from )
+
+        if num_pieces_to_move == 1 :
+            coord_from = coords_from[0]
+            coord_to = coord_from + direction
+            return self.is_valid_one_piece_move( coord_from , coord_to )
+
+        if 2 <= num_pieces_to_move <= 3:
+            if self.is_in_row( coords_from ):
+                if( direction.inverse() == ( coords_from[0] - coords_from[1] ) ):
+                    coords_from.reverse()
+
+                if( direction == ( coords_from[0] - coords_from[1] ) ):
+                    coord_to = ( coords_from[0] + direction )
+                    if( self[ coord_to ] is None ):
+                        return AbaloneBoard.INVALID
+
+                    if( self[ coord_to ].val == AbaloneBoard.EMPTY  ):
+                        return AbaloneBoard.VALID
+
+                    #defines a 'push' move
+                    elif( self[ coord_to ].val != self[ coords_from[ 0 ] ].val ):
+
+                        return self.is_valid_push_move( coords_from , direction )
+
+                #broadside move
+                else:
+                    return self.is_valid_broadside_move( coords_from , direction )
+
+    def make_move( self, coords_from: list, direction: axial_coord  ): #assumes the move has already been validated
+        num_pieces_to_move = len( coords_from )
+        if ( num_pieces_to_move == 1 ):
+            coord_from = coords_from[0]
+            coord_to = coord_from + direction
+            self.make_one_piece_move( coord_from , coord_to )
+
+        elif ( 2 <= num_pieces_to_move <= 3  ):
+            if( direction.inverse() == ( coords_from[0] - coords_from[1] ) ):
+                coords_from.reverse()
+
+            if( direction == ( coords_from[0] - coords_from[1] ) ):
+                coord_to = ( coords_from[0] + direction )
+                if( self[ coord_to ].val == AbaloneBoard.EMPTY  ):
+                    for coord in coords_from:
+                        self.make_move( [coord] , direction )
+
+                else:
+                    self.make_push_move( coords_from , direction )
+
+            else:
+                self.make_broadside_move( coords_from , direction )
+
+
+    def direction_move( self, coords_from: list, direction: axial_coord ):
+        if not self.is_valid_direction( direction ):
+            return AbaloneBoard.INVALID
+
+        num_pieces_to_move = len( coords_from )
+
+        #one_piece_move
+        if ( num_pieces_to_move == 1 ):
+            coord_from = coords_from[0]
+            coord_to = coord_from + direction
+
+            outcome = self.is_valid_one_piece_move( coord_from , coord_to )
+
+            if( outcome ):
+                self.make_one_piece_move( coord_from , coord_to )
+
+            return outcome
+
+        elif ( 2 <= num_pieces_to_move <= 3  ):
+            #they must be in a 'row' for any other movetype
+            if self.is_in_row( coords_from ):
+                if( direction.inverse() == ( coords_from[0] - coords_from[1] ) ):
+                    coords_from.reverse()
+
+
+                #if the move direction and row direction are the same it must be an inline move (technically subset)
+                if( direction == ( coords_from[0] - coords_from[1] ) ):
+                    coord_to = ( coords_from[0] + direction )
+                    if( self[ coord_to ] is None ):
+                        return AbaloneBoard.INVALID
+
+                    coord_to_val = self[ coord_to ].val
+
+                    if( coord_to_val == AbaloneBoard.EMPTY  ):
+                        for coord in coords_from:
+                            self.make_move( [coord] , direction )
+                        return AbaloneBoard.VALID
+
+                    #defines a 'push' move
+                    elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
+
+                        push_outcome = self.is_valid_push_move( coords_from , direction )
+
+                        if( push_outcome ):
+                            self.make_push_move( coords_from , direction )
+                        return push_outcome
+
+
+                #broadside move
+                else:
+                    outcome = self.is_valid_broadside_move( coords_from , direction )
+                    if outcome:
+                        self.make_broadside_move( coords_from , direction )
+                    return outcome
+
+
+    def get_piece_formations( self , player ):
         piece_formations = []
 
         #only use half of the directions so as not to double count
@@ -278,6 +511,16 @@ class AbaloneBoard( HexShapedBoard ):
                             if ( self[ neigh_2 ].val == player):
                                 piece_formations.append( [hex.axial_coord , neigh , neigh_2 ] )
 
+        return piece_formations
+
+
+
+    def move_generation( self , player ):
+        assert player == AbaloneBoard.WHITE or player == AbaloneBoard.BLACK
+
+
+        piece_formations = self.get_piece_formations( player )
+
 
         move_list = []
 
@@ -285,296 +528,11 @@ class AbaloneBoard( HexShapedBoard ):
 
         for group in piece_formations:
             for direction in directions:
-                move_type = self.direction_move_checker( group, direction)
+                move_type = self.is_valid_move( group, direction)
                 if( move_type ):
                     move_list.append( [group, direction, move_type  ])
 
-
         return move_list
-
-    def direction_move_checker( self , coords_from: list, direction: axial_coord ):
-        def push_checker():
-            coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
-
-            push_count = 1
-            if( coord_to_val == AbaloneBoard.BLACK ):
-                coord_from_val = AbaloneBoard.WHITE
-
-            else:
-                coord_from_val = AbaloneBoard.BLACK
-
-            while push_count < max(2, len( coords_from ) ):
-                coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
-
-                if( self[ coord_to ] is None ):
-                    return 'point'
-
-
-                if( self[ coord_to ].val == coord_to_val ):
-                    push_count += 1
-
-                if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
-                    return 'push'
-
-
-
-                if ( self[ coord_to ].val == coord_from_val ):
-                    break
-
-
-        if ( len( coords_from ) == 1 ):
-            coord_from = coords_from[0]
-            coord_to = coord_from + direction
-            if( self.is_empty_neighbor( coord_from , coord_to ) ):
-                return True, 'one'
-
-        elif ( 2 <= len( coords_from ) <= 3  ):
-            if( direction == ( coords_from[0] - coords_from[1] ) ):
-                coord_to = ( coords_from[0] + direction )
-
-                if( self[ coord_to ] is None ):
-                    return None
-
-                coord_to_val = self[ coord_to ].val
-
-
-                if( coord_to_val == AbaloneBoard.EMPTY  ):
-                    for coord in coords_from:
-                        if (self.direction_move_checker( [coord] , direction )):
-                            return False
-                    return True
-
-                #defines a 'push' move
-                elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
-                        return push_checker()
-
-            #broadside move
-            else:
-                all_moves_valid = True
-                for coord in coords_from:
-                    if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
-                        all_moves_valid = False
-                        break
-
-
-                    if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
-                        all_moves_valid = False
-                        break
-
-
-                    if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
-                        all_moves_valid = False
-                        break
-                return all_moves_valid
-
-
-
-    def direction_move( self, coords_from: list, direction: axial_coord ):
-        def one_piece_move_validator( coord_from , coord_to ):
-            if( self.is_empty_neighbor( coord_from , coord_to ) ):
-                return True
-            return False
-
-        def one_piece_move_maker( coord_from , coord_to ):
-            temp_val = self[ coord_from ].val
-            self[ coord_from ] = self[ coord_to ].val
-            self[ coord_to ] = temp_val
-
-        def broadside_move_validator():
-            all_moves_valid = True
-            for coord in coords_from:
-                if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
-                    all_moves_valid = False
-                    break
-
-
-                if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
-                    all_moves_valid = False
-                    break
-
-
-                if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
-                    all_moves_valid = False
-                    break
-            return all_moves_valid
-
-        def broadside_move_maker():
-            for coord_from in coords_from:
-                coord_to = ( coord_from + direction )
-
-                temp_val = self[ coord_from ].val
-                self[ coord_from ] = self[ coord_to ].val
-                self[ coord_to ] = temp_val
-
-            return True
-
-
-        def push_move_validator():
-            coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
-
-            push_count = 1
-            if( coord_to_val == AbaloneBoard.BLACK ):
-                coord_from_val = AbaloneBoard.WHITE
-
-            else:
-                coord_from_val = AbaloneBoard.BLACK
-
-            while push_count < max(2, len( coords_from ) ):
-                coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
-
-                if( self[ coord_to ] is None ):
-                    return 'point'
-
-
-                if( self[ coord_to ].val == coord_to_val ):
-                    push_count += 1
-
-                if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
-                    return True
-
-
-
-                if ( self[ coord_to ].val == coord_from_val ):
-                    break
-
-
-
-        def push_move_maker():
-            coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
-
-            push_count = 1
-            if( coord_to_val == AbaloneBoard.BLACK ):
-                coord_from_val = AbaloneBoard.WHITE
-
-            else:
-                coord_from_val = AbaloneBoard.BLACK
-
-            while push_count < max(2, len( coords_from ) ):
-                coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
-
-                if( self[ coord_to ] is None ):
-                    #we need to get back on the board
-                    coord_to = coord_to - direction
-                    for i in range( push_count + len(coords_from) - 1 ):
-
-                        prev_coord = coord_to - direction
-                        temp_val = self[ prev_coord ].val
-                        self[ coord_to ] = temp_val
-                        coord_to = prev_coord
-
-
-                    self[ prev_coord ] = AbaloneBoard.EMPTY
-
-                    break
-
-                if( self[ coord_to ].val == coord_to_val ):
-                    push_count += 1
-
-                if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
-                    for i in range( push_count + 1 ):
-                        self.direction_move( [ ( coord_to - direction ) ] , direction )
-                        coord_to = ( coord_to - direction )
-
-                    for coord in coords_from:
-                        self.direction_move( [coord] , direction )
-
-                    break
-
-
-                if ( self[ coord_to ].val == coord_from_val ):
-                    break
-
-
-
-        def validate_coords_from( coords: list ):
-            direction = coords[ 0 ] - coords[ 1 ]
-
-            #if any of the conditions of false for any pair of neighboring points in the list then the points can't be in a row
-            for i in range( len(coords) - 1 ):
-                if( (coords[i] - coords[ i + 1 ] ) != direction ):
-                    return False
-
-                if(self[ coords[ i ] ].val != self[ coords[ i+1 ] ].val):
-                    return False
-
-                if( not self.is_valid_neighbor( coords[i] , coords[ i+1 ] ) ):
-                    return False
-
-            return True
-
-
-
-
-        if not max( direction.x ,  direction.y ) <= 1:
-            return None
-        if not min( direction.x , direction.y ) >= -1:
-            return None
-
-        if not -2 < direction.x + direction.y < 2: #also janky
-            return None
-
-        #one_piece_move
-        if ( len( coords_from ) == 1 ):
-            coord_from = coords_from[0]
-            coord_to = coord_from + direction
-
-            if( one_piece_move_validator( coord_from , coord_to ) ):
-                one_piece_move_maker( coord_from , coord_to )
-                return True
-
-            else:
-                return False
-
-
-
-        elif ( 2 <= len( coords_from ) <= 3  ):
-            #they must be in a 'row' for any other movetype
-            if validate_coords_from( coords_from ):
-
-                #if the move direction and row direction are the same it must be an inline move (technically subset)
-                if( direction == ( coords_from[0] - coords_from[1] ) ):
-                    coord_to = ( coords_from[0] + direction )
-                    if( self[ coord_to ] is None ):
-                        return None
-
-                    coord_to_val = self[ coord_to ].val
-
-                    if( coord_to_val == AbaloneBoard.EMPTY  ):
-                        for coord in coords_from:
-                            self.direction_move( [coord] , direction )
-                        return True
-
-                    #defines a 'push' move
-                    elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
-
-                        push_outcome = push_move_validator()
-
-                        if( push_outcome ):
-                            push_move_maker()
-                            return push_outcome
-
-                        else:
-                            return False
-
-                #broadside move
-                else:
-                    if( broadside_move_validator() ):
-                        broadside_move_maker()
-                        return True
-
-
-                    else:
-                        return False
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == '__main__':
@@ -834,3 +792,77 @@ if __name__ == '__main__':
     #                         temp_val = self[ coord_from ].val
     #                         self[ coord_from ] = self[ coord_to ].val
     #                         self[ coord_to ] = temp_val
+    # def direction_move_checker( self , coords_from: list, direction: axial_coord ):
+    #     def push_checker():
+    #         coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
+    #
+    #         push_count = 1
+    #         if( coord_to_val == AbaloneBoard.BLACK ):
+    #             coord_from_val = AbaloneBoard.WHITE
+    #
+    #         else:
+    #             coord_from_val = AbaloneBoard.BLACK
+    #
+    #         while push_count < max(2, len( coords_from ) ):
+    #             coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
+    #
+    #             if( self[ coord_to ] is None ):
+    #                 return 'point'
+    #
+    #
+    #             if( self[ coord_to ].val == coord_to_val ):
+    #                 push_count += 1
+    #
+    #             if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+    #                 return 'push'
+    #
+    #
+    #
+    #             if ( self[ coord_to ].val == coord_from_val ):
+    #                 break
+    #
+    #
+    #     if ( len( coords_from ) == 1 ):
+    #         coord_from = coords_from[0]
+    #         coord_to = coord_from + direction
+    #         if( self.is_empty_neighbor( coord_from , coord_to ) ):
+    #             return True, 'one'
+    #
+    #     elif ( 2 <= len( coords_from ) <= 3  ):
+    #         if( direction == ( coords_from[0] - coords_from[1] ) ):
+    #             coord_to = ( coords_from[0] + direction )
+    #
+    #             if( self[ coord_to ] is None ):
+    #                 return None
+    #
+    #             coord_to_val = self[ coord_to ].val
+    #
+    #
+    #             if( coord_to_val == AbaloneBoard.EMPTY  ):
+    #                 for coord in coords_from:
+    #                     if (self.direction_move_checker( [coord] , direction )):
+    #                         return False
+    #                 return True
+    #
+    #             #defines a 'push' move
+    #             elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
+    #                     return push_checker()
+    #
+    #         #broadside move
+    #         else:
+    #             all_moves_valid = True
+    #             for coord in coords_from:
+    #                 if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
+    #                     all_moves_valid = False
+    #                     break
+    #
+    #
+    #                 if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
+    #                     all_moves_valid = False
+    #                     break
+    #
+    #
+    #                 if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
+    #                     all_moves_valid = False
+    #                     break
+    #             return all_moves_valid

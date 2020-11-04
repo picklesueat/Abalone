@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
         if( cont.game.two_player == False ):
             if( cont.game.turn == 1 ):
-                cont.make_AI_move()
+                cont.get_best_move( 3 )
                 update_board()
 
 

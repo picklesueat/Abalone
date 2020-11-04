@@ -13,7 +13,8 @@ import board
 from board import axial_coord
 from game import Game
 from math import sqrt
-
+import copy
+import settings
 
 #I think the model is leaking
 class Controller():
@@ -46,37 +47,40 @@ class Controller():
             self.prev_click_coords = []
             self.updated = True
 
-    def make_AI_move( self, look_ahead = 1 ): #AI AI AI
-        moves = self.game.board.move_generation( 1 )
-        center = self.game.board.center
 
-        move_vals = []
-
-        for move in moves:
-            if( move[2] == 'point' ):
-                self.game.make_turn( move[ 0 ] , move[ 1 ] )
-                return None
-
-            pre_distance_to_center = 0
-            post_distance_to_center = 0
-
-            for piece in move[0]:
-                pre_distance_to_center += piece.distance( center )
-
-            pre_distance_to_center = pre_distance_to_center  / len( move[ 0 ] )
-
-            for piece in move[0]:
-                piece_post = piece + move[1]
-                post_distance_to_center += piece_post.distance( center )
-
-            post_distance_to_center = post_distance_to_center  / len( move[ 0 ] )
+    def get_best_move( self , depth ):
+        self.game =  self.game.minimax( depth )[1]
 
 
-            move_vals.append( (pre_distance_to_center - post_distance_to_center, len( move[ 0 ] ) ) )
 
 
-        best_move_index = move_vals.index( max( move_vals ) )
 
-        best_move = moves[ best_move_index ]
 
-        self.game.make_turn( best_move[ 0 ] , best_move[ 1 ] )
+        # for move in moves:
+        #     if( move[2] == board.AbaloneBoard.POINT ):
+        #         self.game.make_turn( move[ 0 ] , move[ 1 ] )
+        #         return None
+        #
+        #     pre_distance_to_center = 0
+        #     post_distance_to_center = 0
+        #
+        #     for piece in move[0]:
+        #         pre_distance_to_center += piece.distance( center )
+        #
+        #     pre_distance_to_center = pre_distance_to_center  / len( move[ 0 ] )
+        #
+        #     for piece in move[0]:
+        #         piece_post = piece + move[1]
+        #         post_distance_to_center += piece_post.distance( center )
+        #
+        #     post_distance_to_center = post_distance_to_center  / len( move[ 0 ] )
+        #
+        #
+        #     move_vals.append( (pre_distance_to_center - post_distance_to_center, len( move[ 0 ] ) ) )
+        #
+        #
+        # best_move_index = move_vals.index( max( move_vals ) )
+        #
+        # best_move = moves[ best_move_index ]
+        #
+        # self.game.make_turn( best_move[ 0 ] , best_move[ 1 ] )
