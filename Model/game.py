@@ -1,6 +1,8 @@
 import board
 from board import axial_coord
 from copy import deepcopy
+import random
+import time
 
 class Game():
     WHITE = 2
@@ -17,8 +19,13 @@ class Game():
             self.lives = lives
             self.pieces = pieces
 
+    class AI( Player ):
+        def __init__( self , color , lives , pieces ,  depth ):
+            super().__init__( color , lives , pieces )
+            self.depth = depth
 
-    def __init__( self , size , two_player = True ):
+
+    def __init__( self , size , two_player = True , depth = 1 ):
         self.size = size
 
         self.board = board.AbaloneBoard( self.size )
@@ -26,13 +33,20 @@ class Game():
 
         self.lives = self.lives[ self.size ]
         pieces = 0
-        self.white_player = self.Player( Game.WHITE , self.lives , pieces )
-        self.black_player = self.Player( Game.BLACK , self.lives , pieces )
+        if two_player:
+            self.white_player = self.Player( Game.WHITE , self.lives , pieces )
+            self.black_player = self.Player( Game.BLACK , self.lives , pieces )
+
+        else:
+            self.white_player = self.Player( Game.WHITE , self.lives , pieces )
+            self.black_player = self.AI( Game.BLACK , self.lives , pieces , depth )
 
         self.winner = 0
 
         self.turn = Game.BLACK
         self.two_player = two_player
+        self.check_for_AI_move()
+        self.last_move = None
 
 
 
@@ -90,36 +104,53 @@ class Game():
 
     def check_winner( self ):
         if( self.white_player.lives == 0 ):
-            print(' Black Wins ')
             self.winner = self.board.BLACK
-            return True
 
         if( self.black_player.lives == 0 ):
-            print(' White Wins ')
             self.winner = self.board.WHITE
-            return True
 
-
-    def make_turn( self , coords_from: list , direction: axial_coord ):  #doing this weird shit with return functions
+    def make_turn( self , coords_from: list , direction: axial_coord ):
         if( self.winner == 0  ):
             for coord in coords_from:
                 if( self.board[ coord ] is None or self.board[ coord ].val != self.turn ):
                     return 'Error wrong player'
 
-
-            move = self.board.direction_move( coords_from, direction )
-            if( move == self.board.POINT ):
+            move_type = self.board.direction_move( coords_from, direction )
+            if( move_type == self.board.POINT ):
                 self.change_player()
                 self.lose_piece()
+                self.last_move = [ coords_from , direction , move_type ]
 
-            elif( move ):
+            elif( move_type ):
                 self.change_player()
+                self.last_move = [ coords_from , direction , move_type ]
 
             else:
                 return 'Illegal Move try again'
 
             self.check_winner()
 
+
+    def check_for_AI_move( self ):
+        if( self.turn == Game.BLACK and self.two_player == False ):
+            time.sleep( .5 )
+            self.AI_move()
+
+
+    def AI_move( self ):
+        # moves = self.board.move_generation( self.turn )
+        #
+        # rand_move = random.randint( 0 , len( moves ) - 1 )
+        # move = moves[ rand_move ]
+        #
+        # self.make_turn( move[0] , move[1] )
+
+        move = self.minimax( self.black_player.depth )
+
+        print( move )
+
+        move = move[1]
+        self.make_turn( move.last_move[0] , move.last_move[1] )
 
     def children_generator( self ):
         children = []
@@ -129,7 +160,6 @@ class Game():
             children.append( temp )
 
         return children
-        print(children)
 
     def eval_func( self ):
         if ( self.winner == self.board.WHITE ):
@@ -139,10 +169,30 @@ class Game():
 
         else:
             eval = self.black_player.lives - self.white_player.lives
-            eval += 0
+            eval += self.centerness_eval() / 10
             return eval
 
-    #def centerness_eval( self ):
+
+    def centerness_eval( self ):
+        #change is distance to center
+        center = self.board.center
+        pre_distance_to_center = 0
+        post_distance_to_center = 0
+        move = self.last_move
+
+        for piece in move[0]:
+            pre_distance_to_center += piece.distance( center )
+
+        for piece in move[0]:
+            piece_post = piece + move[1]
+            post_distance_to_center += piece_post.distance( center )
+
+        change_in_dist = pre_distance_to_center - post_distance_to_center
+
+        if( self.board[ move[0][0] + self.last_move[1] ].val == Game.BLACK ):
+            return change_in_dist
+        else:
+            return -change_in_dist
 
 
     def minimax( self , depth , maximizing_player = True ): #AI AI AI
@@ -152,22 +202,25 @@ class Game():
         if maximizing_player:
             maxEval = float('-inf')
             best_board = 0
+
             for child in self.children_generator():
-                eval = child.minimax( depth - 1 , False )
-                if( eval[0] > maxEval ):
-                    maxEval = eval[0]
+                eval , _ = child.minimax( depth - 1 , False )
+                if( eval > maxEval ):
+                    maxEval = eval
                     best_board = child
             return maxEval, best_board
 
         else:
             minEval = float('inf')
             worst_board = 0
+
             for child in self.children_generator():
-                eval = child.minimax( depth - 1 , True )
-                if( eval[0] < minEval ):
-                    minEval = eval[0]
+                eval, _ = child.minimax( depth - 1 , True )
+                if( eval < minEval ):
+                    minEval = eval
                     worst_board = child
-            return minEval , child
+            return minEval, worst_board
+
 
     def __str__( self ):
         return str( self.board )
@@ -185,10 +238,12 @@ class Game():
         self.board[ coords ] = val
 
 
+
+
+
+
 if __name__ == '__main__':
     test = Game( 3 )
+
     for child in test.children_generator():
         print( child )
-
-    print( os.getcwd() )
-    print( settings.WHITE )

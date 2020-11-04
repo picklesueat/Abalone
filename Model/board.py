@@ -368,6 +368,19 @@ class AbaloneBoard( HexShapedBoard ):
             if ( self[ coord_to ].val == coord_from_val ):
                 break
 
+    def all_moves( self , coords_from: list ):
+        move_list = []
+
+        directions = [ axial_coord( 1 , 0 ) , axial_coord( -1 , 0 ) , axial_coord( 0 , 1 ) , axial_coord( 0 , -1 ) , axial_coord( 1 , -1 ) , axial_coord( -1 , 1 ) ]
+
+        for direction in directions:
+            move_type = self.is_valid_move( coords_from , direction)
+            if( move_type ):
+                    move_list.append( [ coords_from , direction , move_type ]  )
+
+        return move_list
+
+
     @staticmethod
     def is_valid_direction( direction ):
         if not max( direction.x ,  direction.y ) <= 1:
@@ -518,20 +531,11 @@ class AbaloneBoard( HexShapedBoard ):
     def move_generation( self , player ):
         assert player == AbaloneBoard.WHITE or player == AbaloneBoard.BLACK
 
-
         piece_formations = self.get_piece_formations( player )
 
-
         move_list = []
-
-        directions = [ axial_coord( 1 , 0 ) , axial_coord( -1 , 0 ) , axial_coord( 0 , 1 ) , axial_coord( 0 , -1 ) , axial_coord( 1 , -1 ) , axial_coord( -1 , 1 ) ]
-
         for group in piece_formations:
-            for direction in directions:
-                move_type = self.is_valid_move( group, direction)
-                if( move_type ):
-                    move_list.append( [group, direction, move_type  ])
-
+            move_list.extend( self.all_moves( group ) )
         return move_list
 
 

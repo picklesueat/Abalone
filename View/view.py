@@ -129,7 +129,7 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(SCREEN_SIZE)
 
 
-    cont = Controller( 3 , two_player = False )
+    cont = Controller( 2, two_player = False , depth = 1 )
 
     radius = update_board()
 
@@ -138,11 +138,6 @@ if __name__ == '__main__':
 
     while True:
         pygame.time.delay( 100 )
-
-        if( cont.game.two_player == False ):
-            if( cont.game.turn == 1 ):
-                cont.get_best_move( 3 )
-                update_board()
 
 
         for event in pygame.event.get():
@@ -165,9 +160,8 @@ if __name__ == '__main__':
 
                         if( cont.updated ):
                             update_board()
-
-
-
+                            cont.update()
+                            update_board()
 
                     else:
                         if cont.take_first_click( pos ):
