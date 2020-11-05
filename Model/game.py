@@ -52,39 +52,39 @@ class Game():
 
 
     def add_pieces( self ):
-        # #regular setup
-        # for hex in self.board:
-        #     if( hex.axial_coord.y == 0 ):
-        #         hex.val = Game.WHITE
-        #
-        #     if( hex.axial_coord.y == self.size * 2 - 1 - 1 ):
-        #         hex.val = Game.BLACK
-        #
-        # if( self.size == 3 ):
-        #     self.board[ axial_coord( 2, 1)] = Game.WHITE
-        #     self.board[ axial_coord( 3, 1)] = Game.WHITE
-        #
-        #     self.board[ axial_coord( 2, 3)] = Game.BLACK
-        #     self.board[ axial_coord( 1, 3)] = Game.BLACK
+        #regular setup
+        for hex in self.board:
+            if( hex.axial_coord.y == 0 ):
+                hex.val = Game.WHITE
 
-        #Belgian Daisy
+            if( hex.axial_coord.y == self.size * 2 - 1 - 1 ):
+                hex.val = Game.BLACK
+
         if( self.size == 3 ):
-            self.board[ axial_coord( 2, 0)] = Game.WHITE
-            self.board[ axial_coord( 1, 1)] = Game.WHITE
             self.board[ axial_coord( 2, 1)] = Game.WHITE
+            self.board[ axial_coord( 3, 1)] = Game.WHITE
 
-            self.board[ axial_coord( 2, 4)] = Game.WHITE
-            self.board[ axial_coord( 3, 3)] = Game.WHITE
-            self.board[ axial_coord( 2, 3)] = Game.WHITE
-
-
-            self.board[ axial_coord( 4, 0)] = Game.BLACK
-            self.board[ axial_coord( 4, 1)] = Game.BLACK
-            self.board[ axial_coord( 3, 1)] = Game.BLACK
-
-            self.board[ axial_coord( 0, 4)] = Game.BLACK
+            self.board[ axial_coord( 2, 3)] = Game.BLACK
             self.board[ axial_coord( 1, 3)] = Game.BLACK
-            self.board[ axial_coord( 0, 3)] = Game.BLACK
+        #
+        # #Belgian Daisy
+        # if( self.size == 3 ):
+        #     self.board[ axial_coord( 2, 0)] = Game.WHITE
+        #     self.board[ axial_coord( 1, 1)] = Game.WHITE
+        #     self.board[ axial_coord( 2, 1)] = Game.WHITE
+        #
+        #     self.board[ axial_coord( 2, 4)] = Game.WHITE
+        #     self.board[ axial_coord( 3, 3)] = Game.WHITE
+        #     self.board[ axial_coord( 2, 3)] = Game.WHITE
+        #
+        #
+        #     self.board[ axial_coord( 4, 0)] = Game.BLACK
+        #     self.board[ axial_coord( 4, 1)] = Game.BLACK
+        #     self.board[ axial_coord( 3, 1)] = Game.BLACK
+        #
+        #     self.board[ axial_coord( 0, 4)] = Game.BLACK
+        #     self.board[ axial_coord( 1, 3)] = Game.BLACK
+        #     self.board[ axial_coord( 0, 3)] = Game.BLACK
 
     def change_player( self ):
         if( self.turn == Game.BLACK ):

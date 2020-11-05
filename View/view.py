@@ -129,7 +129,7 @@ if __name__ == '__main__':
     screen = pygame.display.set_mode(SCREEN_SIZE)
 
 
-    cont = Controller( 2, two_player = False , depth = 1 )
+    cont = Controller( 3, two_player = False , depth = 2 )
 
     radius = update_board()
 
