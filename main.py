@@ -1,3 +1,3 @@
-from view import view
+from abalone.view import view
 
 view.main()

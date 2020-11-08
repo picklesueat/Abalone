@@ -1,8 +1,12 @@
-import board
-from board import axial_coord
+
+
+from . import board
+from .board import axial_coord
 from copy import deepcopy
 import random
 import time
+
+
 
 class Game():
     WHITE = 2

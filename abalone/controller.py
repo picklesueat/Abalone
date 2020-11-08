@@ -4,16 +4,15 @@ import pygame
 
 import random
 
-sys.path.insert(1, "/home/picklesueat/Python_projects/Abalone/Model/")
-sys.path.insert(1, "/home/picklesueat/Python_projects/Abalone/View/")
+
 
 import test
-import board
-from board import axial_coord
-from game import Game
+import abalone.model.board
+from abalone.model.board import axial_coord
+from abalone.model.game import Game
 from math import sqrt
 import copy
-import settings
+
 
 #I think the model is leaking
 class Controller():
