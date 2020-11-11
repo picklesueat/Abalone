@@ -65,8 +65,8 @@ def main():
 
         radius = int(radius)
         print( IMAGES_DIR )
-        white_ball = pygame.image.load(IMAGES_DIR + "/cody.jpg")
-        black_ball = pygame.image.load(IMAGES_DIR + "/img.JPG")
+        white_ball = pygame.image.load(IMAGES_DIR + "/white_ball.jpg")
+        black_ball = pygame.image.load(IMAGES_DIR + "/black_ball.jpg")
 
         black_ball = pygame.transform.scale(black_ball, (radius, radius))
         white_ball = pygame.transform.scale(white_ball, (radius, radius))
@@ -129,7 +129,7 @@ def main():
     screen = pygame.display.set_mode(SCREEN_SIZE)
 
 
-    cont = Controller( 3 , two_player = False , depth = 2 )
+    cont = Controller( 3 , two_player = False , depth = 3 )
 
     radius = update_board()
 

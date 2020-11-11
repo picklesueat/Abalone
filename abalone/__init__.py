@@ -1,6 +1,6 @@
 print( __file__ , __name__ )
 
 
-BLACK = 10
-WHITE = 200
-EMPTY = 57
+BLACK = 1
+WHITE = 2
+EMPTY = 0

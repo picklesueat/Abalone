@@ -44,4 +44,5 @@ class Controller():
             self.updated = True
 
     def update( self ):
-        self.game.check_for_AI_move()
+        if( self.game.winner == 0 ):
+            self.game.check_for_AI_move()
