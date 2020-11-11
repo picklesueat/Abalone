@@ -1,5 +1,4 @@
-
-
+from abalone import BLACK, WHITE, EMPTY
 from . import board
 from .board import axial_coord
 from copy import deepcopy
@@ -9,23 +8,22 @@ import time
 
 
 class Game():
-    WHITE = 2
-    BLACK = 1
+    WHITE = WHITE
+    BLACK = BLACK
     lives = {2: 1,
             3:2,
             4:4,
-            5:6
-    }
+            5:6}
 
     class Player():
-        def __init__( self , color , lives , pieces ):
+        def __init__( self , color , lives ):
             self.color = color
             self.lives = lives
-            self.pieces = pieces
+
 
     class AI( Player ):
-        def __init__( self , color , lives , pieces ,  depth ):
-            super().__init__( color , lives , pieces )
+        def __init__( self , color , lives,  depth ):
+            super().__init__( color , lives)
             self.depth = depth
 
 
@@ -36,18 +34,17 @@ class Game():
         self.add_pieces()
 
         self.lives = self.lives[ self.size ]
-        pieces = 0
         if two_player:
-            self.white_player = self.Player( Game.WHITE , self.lives , pieces )
-            self.black_player = self.Player( Game.BLACK , self.lives , pieces )
+            self.white_player = self.Player( WHITE , self.lives)
+            self.black_player = self.Player( BLACK , self.lives)
 
         else:
-            self.white_player = self.Player( Game.WHITE , self.lives , pieces )
-            self.black_player = self.AI( Game.BLACK , self.lives , pieces , depth )
+            self.white_player = self.Player( WHITE , self.lives)
+            self.black_player = self.AI( BLACK , self.lives , depth )
 
         self.winner = 0
 
-        self.turn = Game.BLACK
+        self.turn = BLACK
         self.two_player = two_player
         self.check_for_AI_move()
         self.last_move = None
@@ -59,59 +56,57 @@ class Game():
         # #regular setup
         # for hex in self.board:
         #     if( hex.axial_coord.y == 0 ):
-        #         hex.val = Game.WHITE
+        #         hex.val = WHITE
         #
         #     if( hex.axial_coord.y == self.size * 2 - 1 - 1 ):
-        #         hex.val = Game.BLACK
+        #         hex.val = BLACK
         #
         # if( self.size == 3 ):
-        #     self.board[ axial_coord( 2, 1)] = Game.WHITE
-        #     self.board[ axial_coord( 3, 1)] = Game.WHITE
+        #     self.board[ axial_coord( 2, 1)] = WHITE
+        #     self.board[ axial_coord( 3, 1)] = WHITE
         #
-        #     self.board[ axial_coord( 2, 3)] = Game.BLACK
-        #     self.board[ axial_coord( 1, 3)] = Game.BLACK
+        #     self.board[ axial_coord( 2, 3)] = BLACK
+        #     self.board[ axial_coord( 1, 3)] = BLACK
 
         #Belgian Daisy
         if( self.size == 3 ):
-            self.board[ axial_coord( 2, 0)] = Game.WHITE
-            self.board[ axial_coord( 1, 1)] = Game.WHITE
-            self.board[ axial_coord( 2, 1)] = Game.WHITE
+            self.board[ axial_coord( 2, 0)] = WHITE
+            self.board[ axial_coord( 1, 1)] = WHITE
+            self.board[ axial_coord( 2, 1)] = WHITE
 
-            self.board[ axial_coord( 2, 4)] = Game.WHITE
-            self.board[ axial_coord( 3, 3)] = Game.WHITE
-            self.board[ axial_coord( 2, 3)] = Game.WHITE
+            self.board[ axial_coord( 2, 4)] = WHITE
+            self.board[ axial_coord( 3, 3)] = WHITE
+            self.board[ axial_coord( 2, 3)] = WHITE
 
 
-            self.board[ axial_coord( 4, 0)] = Game.BLACK
-            self.board[ axial_coord( 4, 1)] = Game.BLACK
-            self.board[ axial_coord( 3, 1)] = Game.BLACK
+            self.board[ axial_coord( 4, 0)] = BLACK
+            self.board[ axial_coord( 4, 1)] = BLACK
+            self.board[ axial_coord( 3, 1)] = BLACK
 
-            self.board[ axial_coord( 0, 4)] = Game.BLACK
-            self.board[ axial_coord( 1, 3)] = Game.BLACK
-            self.board[ axial_coord( 0, 3)] = Game.BLACK
+            self.board[ axial_coord( 0, 4)] = BLACK
+            self.board[ axial_coord( 1, 3)] = BLACK
+            self.board[ axial_coord( 0, 3)] = BLACK
 
     def change_player( self ):
-        if( self.turn == Game.BLACK ):
-            self.turn = Game.WHITE
+        if( self.turn == BLACK ):
+            self.turn = WHITE
 
         else:
-            self.turn = Game.BLACK
+            self.turn = BLACK
 
     def lose_piece( self ):
-        if( self.turn == Game.BLACK ):
-            self.black_player.pieces = self.black_player.pieces - 1
+        if( self.turn == BLACK ):
             self.black_player.lives = self.black_player.lives - 1
 
         else:
-            self.white_player.pieces = self.white_player.pieces - 1
             self.white_player.lives = self.white_player.lives - 1
 
     def check_winner( self ):
         if( self.white_player.lives == 0 ):
-            self.winner = self.board.BLACK
+            self.winner = BLACK
 
         if( self.black_player.lives == 0 ):
-            self.winner = self.board.WHITE
+            self.winner = WHITE
 
     def make_turn( self , coords_from: list , direction: axial_coord ):
         if( self.winner == 0  ):
@@ -136,7 +131,7 @@ class Game():
 
 
     def check_for_AI_move( self ):
-        if( self.turn == Game.BLACK and self.two_player == False ):
+        if( self.turn == BLACK and self.two_player == False ):
             time.sleep( .5 )
             self.AI_move()
 
@@ -166,9 +161,9 @@ class Game():
         return children
 
     def eval_func( self ):
-        if ( self.winner == self.board.WHITE ):
+        if ( self.winner == WHITE ):
             return float('-inf')
-        elif ( self.winner == self.board.BLACK ):
+        elif ( self.winner == BLACK ):
             return float('inf')
 
         else:
@@ -193,14 +188,14 @@ class Game():
 
         change_in_dist = pre_distance_to_center - post_distance_to_center
 
-        if( self.board[ move[0][0] + self.last_move[1] ].val == Game.BLACK ):
+        if( self.board[ move[0][0] + self.last_move[1] ].val == BLACK ):
             return change_in_dist
         else:
             return -change_in_dist
 
 
     def minimax( self , depth , maximizing_player = True ): #AI AI AI
-        if( depth == 0 or self.winner == self.board.WHITE or self.winner == self.board.BLACK ):
+        if( depth == 0 or self.winner == WHITE or self.winner == BLACK ):
             return self.eval_func() , None
 
         if maximizing_player:
