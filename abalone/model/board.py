@@ -1,4 +1,5 @@
 from collections import namedtuple
+from abalone import BLACK, WHITE, EMPTY
 
 cube_coord = namedtuple('coord', ['x','y','z'])
 
@@ -81,8 +82,7 @@ class HexGridStorage():
 
 #hex to be placed on valid board squares, helps precompute values
 class Hex():
-    def __init__( self, x_pos, y_pos, val = 0 ):
-        x_pos
+    def __init__( self, x_pos, y_pos, val = EMPTY ):
         self.axial_coord = axial_coord( x_pos, y_pos )
         self.cube_coord = cube_coord( x_pos, y_pos, -x_pos - y_pos )
         self.possible_neighbors = self.get_neigh_coords( self.axial_coord )
@@ -231,10 +231,6 @@ class HexShapedBoard():
 
 #adds pieces and rules for abalone to hex board
 class AbaloneBoard( HexShapedBoard ):
-    WHITE = 2
-    BLACK = 1
-    EMPTY = 0
-
     #Move Types
     INVALID = 0
     VALID = 1
@@ -245,7 +241,7 @@ class AbaloneBoard( HexShapedBoard ):
         return (coord_to) in self[ coord_from ].possible_neighbors
 
     def is_empty_neighbor( self , coord_from , coord_to ):
-        return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == 0 )
+        return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == EMPTY )
 
 
     def is_valid_one_piece_move( self , coord_from , coord_to ):
@@ -282,12 +278,12 @@ class AbaloneBoard( HexShapedBoard ):
                 break
 
 
-            if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
+            if( not (self[ coord ].val == WHITE or self[ coord ].val == BLACK) ):
                 all_moves_valid = False
                 break
 
 
-            if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
+            if( not (self[ ( coord + direction ) ].val == EMPTY) ):
                 all_moves_valid = False
                 break
 
@@ -309,11 +305,11 @@ class AbaloneBoard( HexShapedBoard ):
         coord_to_val = self[ coord_to ].val
 
         push_count = 1
-        if( coord_to_val == AbaloneBoard.BLACK ):
-            coord_from_val = AbaloneBoard.WHITE
+        if( coord_to_val == BLACK ):
+            coord_from_val = WHITE
 
         else:
-            coord_from_val = AbaloneBoard.BLACK
+            coord_from_val = BLACK
 
         while push_count < max(2, len( coords_from ) ):
             coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
@@ -325,7 +321,7 @@ class AbaloneBoard( HexShapedBoard ):
             if( self[ coord_to ].val == coord_to_val ):
                 push_count += 1
 
-            if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+            if( self[ coord_to ].val == EMPTY ):
                 return AbaloneBoard.VALID
 
 
@@ -340,10 +336,10 @@ class AbaloneBoard( HexShapedBoard ):
         coord_to_val = self[ coord_to ].val
 
         push_count = 1
-        if( coord_to_val == AbaloneBoard.BLACK ):
-            coord_from_val = AbaloneBoard.WHITE
+        if( coord_to_val == BLACK ):
+            coord_from_val = WHITE
         else:
-            coord_from_val = AbaloneBoard.BLACK
+            coord_from_val = BLACK
         while push_count < max(2, len( coords_from ) ):
             coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
             if( self[ coord_to ] is None ):
@@ -354,11 +350,11 @@ class AbaloneBoard( HexShapedBoard ):
                     temp_val = self[ prev_coord ].val
                     self[ coord_to ] = temp_val
                     coord_to = prev_coord
-                self[ prev_coord ] = AbaloneBoard.EMPTY
+                self[ prev_coord ] = EMPTY
                 break
             if( self[ coord_to ].val == coord_to_val ):
                 push_count += 1
-            if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
+            if( self[ coord_to ].val == EMPTY ):
                 for i in range( push_count + 1 ):
                     self.direction_move( [ ( coord_to - direction ) ] , direction )
                     coord_to = ( coord_to - direction )
@@ -414,7 +410,7 @@ class AbaloneBoard( HexShapedBoard ):
                     if( self[ coord_to ] is None ):
                         return AbaloneBoard.INVALID
 
-                    if( self[ coord_to ].val == AbaloneBoard.EMPTY  ):
+                    if( self[ coord_to ].val == EMPTY  ):
                         return AbaloneBoard.VALID
 
                     #defines a 'push' move
@@ -439,7 +435,7 @@ class AbaloneBoard( HexShapedBoard ):
 
             if( direction == ( coords_from[0] - coords_from[1] ) ):
                 coord_to = ( coords_from[0] + direction )
-                if( self[ coord_to ].val == AbaloneBoard.EMPTY  ):
+                if( self[ coord_to ].val == EMPTY  ):
                     for coord in coords_from:
                         self.make_move( [coord] , direction )
 
@@ -483,7 +479,7 @@ class AbaloneBoard( HexShapedBoard ):
 
                     coord_to_val = self[ coord_to ].val
 
-                    if( coord_to_val == AbaloneBoard.EMPTY  ):
+                    if( coord_to_val == EMPTY  ):
                         for coord in coords_from:
                             self.make_move( [coord] , direction )
                         return AbaloneBoard.VALID
@@ -529,7 +525,7 @@ class AbaloneBoard( HexShapedBoard ):
 
 
     def move_generation( self , player ):
-        assert player == AbaloneBoard.WHITE or player == AbaloneBoard.BLACK
+        assert player == WHITE or player == BLACK
 
         piece_formations = self.get_piece_formations( player )
 
@@ -547,326 +543,3 @@ if __name__ == '__main__':
     x = test.move_generation( 2 )
     for move in x:
         print( move )
-    # #test.update_neighbors()
-    #
-    # # for hex in test:
-    # #     print( repr(hex) )
-    # print( repr( test[ axial_coord( 2, 1) ] ) )
-
-    #print( test[ axial_coord( 1 , 0 ) ].possible_neighbors )
-    #print( test.is_empty_neighbor( axial_coord( 1 , 0 ) , axial_coord( 1,1) ) )
-
-    #print( axial_coord( 2,0 ) in [axial_coord( 1 , 0 ) , axial_coord( 2 , 0)])
-
-    #print( test[ axial_coord( 2 , 2 )].possible_neighbors )
-
-    # test = AbaloneBoard(3)
-    # test.add_pieces()
-    #
-    # #print(repr( test[ axial_coord( 0 , 3 ) ]) )
-    # test.direction_move( [ axial_coord( 0 , 2 ), axial_coord( 0 , 3 ), axial_coord( 0 , 4 ) ], axial_coord( 1, 0 ))
-    # #test.direction_move( [ axial_coord( 1 , 2 ), axial_coord( 1 , 3 ), axial_coord( 1 , 4 ) ], axial_coord( 1, 0 ))
-
-    # test.direction_move( [ axial_coord( 2 , 0 ), axial_coord( 3 , 0 ), axial_coord( 4 , 0 ) ], axial_coord( -1, 1 ))
-    # test.direction_move( [ axial_coord( 3 , 1 ) ], axial_coord( -1, 1 ))
-    #
-    #
-    # test.direction_move( [ axial_coord( 0 , 4 ), axial_coord( 1 , 4 ), axial_coord( 2 , 4 ) ], axial_coord( 1, -1 ))
-    # test.direction_move( [ axial_coord( 2 , 3 ), axial_coord( 3 , 3 ) ], axial_coord( 1, -1 ))
-    #
-    # # test.direction_move( [ axial_coord( 3 , 2 ), axial_coord( 4 , 2 ) ], axial_coord( -1 , 0 ))
-    # test.direction_move( [ axial_coord( 2 , 1 ) ], axial_coord( -1 , 1 ))
-    #
-    # test.direction_move( [ axial_coord( 3 , 2 ), axial_coord( 4 , 2 ) ], axial_coord( -1, 0 ))
-    #
-    # test.direction_move( [ axial_coord( 2 , 2 ), axial_coord( 3 , 2 ) ], axial_coord( -1 , 0 ))
-    #
-    # test.direction_move( [ axial_coord( 1 , 2 ), axial_coord( 2 , 2 ) ], axial_coord( -1 , 0 ))
-
-    #test.direction_move( [ axial_coord( 2 , 2 ), axial_coord( 1 , 2  ), axial_coord( 0 , 2 ) ], axial_coord( 1, 0 ))
-
-    #test.direction_move( [ axial_coord( 3 , 2 ), axial_coord( 2 , 2  ), axial_coord( 1 , 2 ) ], axial_coord( 1, 0 ))
-
-    # test.direction_move( [ axial_coord( 1 , 0 ) ], axial_coord( -1, 1 ))
-    # test.direction_move( [ axial_coord( 2 , 0 ) ], axial_coord( -1, 1 ))
-    # #test.direction_move( [ axial_coord( 1 , 1 ) ], axial_coord( 1, 0 ))
-    #
-    # test.direction_move( [ axial_coord( 1 , 1 ) , axial_coord( 0 , 1 ) ], axial_coord( 1, 0 ))
-    #
-    # test.direction_move( [ axial_coord( 1 , 1 ) , axial_coord( 2 , 1 ) ], axial_coord( 0, -1 ))
-    #
-    # test.direction_move( [ axial_coord( 1 , 0 ) , axial_coord( 2 , 0 ) ], axial_coord( -1, 1 ))
-    #
-    # test.direction_move( [ axial_coord( 1 , 2 ) ], axial_coord( 1, -1 ))
-    #
-    #
-    # test.direction_move( [ axial_coord( 1 , 1 ) , axial_coord( 0 , 1 ) ], axial_coord( 1, 0 ))
-
-    print( test )
-    # test.direction_move( [ axial_coord( 4 , 0 ) ], axial_coord( -1, 0 ))
-    # # test.direction_move( [ axial_coord( 2 , 2 ), axial_coord( 2 , 3 ) ], axial_coord( 0, -1 ))
-
-
-    #test.direction_move( [ axial_coord( 0 , 5 ), axial_coord( 0 , 6 ) ], axial_coord( 1, -1 ))
-    #test.direction_move( [ axial_coord( 0 , 5 ), axial_coord( 0 , 6 ) ], axial_coord( 1, -1 ))
-
-    #test.direction_move( [ axial_coord( 0 , 5 ), axial_coord( 0 , 6 ) ], axial_coord( 1, -1 ))
-    #test.direction_move( [ axial_coord( 1 , 4 ), axial_coord( 0 , 4 ) ], axial_coord( 1, -1 ))
-
-    # test.direction_move( [ axial_coord( 0 , 3 ) ], axial_coord( 1, -1 ))
-    # test.direction_move( [ axial_coord( 1 , 2 ) ], axial_coord( 0, 1 ))
-
-
-    # print( test.moveable( axial_coord( 0, 3 ), axial_coord( 1, 3 ) ) )
-    #
-    #
-    # print( test[ axial_coord( 0, 3 ) ].possible_neighbors)
-    #
-    #
-    #
-    # neighs = []
-    # for x in range(6):
-    #     neighs.append( axial_coord( 0 , x) )
-    #
-    #
-    # print( len(axial_coord(0,1))   )
-    #
-    # print('\n\n\n\n')
-    # print(neighs[0] + neighs[1])
-
-    # def direction_move( self, coords_from: list, direction: axial_coord ):
-    #     def add_axial_coords( a , b ):
-    #         return axial_coord( a.x + b.x , a.y + b.y)
-    #
-    #     def subtract_axial_coords( a , b ):
-    #         return axial_coord(  (a.x - b.x) , (a.y - b.y) )
-    #
-    #     def one_piece_move( coord_from , coord_to ):
-    #         if( self.is_empty_neighbor( coord_from , coord_to ) ):
-    #             temp_val = self[ coord_from ].val
-    #             self[ coord_from ] = self[ coord_to ].val
-    #             self[ coord_to ] = temp_val
-    #
-    #
-    #
-    #     def is_in_row( coords ):
-    #         direction = coords[ 0 ] - coords[ 1 ]
-    #         for i in range( len(coords) - 1 ):
-    #             if(  (coords[i] - coords[ i + 1 ] != direction) or (self[ coords[ i ] ].val != self[ coords[ i+1 ] ].val) or ( not self.is_valid_neighbor( coords[i] , coords[ i+1 ] ) ) ):
-    #                 return False
-    #
-    #         return True
-    #
-    #
-    #
-    #
-    #     assert max( direction.x ,  direction.y ) <= 1
-    #     assert min( direction.x , direction.y ) >= -1
-    #     assert -2 < direction.x + direction.y < 2
-    #
-    #     if ( len( coords_from ) == 1 ):
-    #         coord_from = coords_from[0]
-    #         coord_to = coord_from + direction
-    #
-    #         one_piece_move( coord_from, coord_to )
-    #
-    #     if ( 2 <= len( coords_from ) <= 3  ):
-    #         #they must be in a 'row' for any movetype
-    #         if is_in_row( coords_from ):
-    #             #if the move direction and row direction are the same it must be an inline move
-    #             if( direction == subtract_axial_coords( coords_from[0], coords_from[1] ) ):
-    #                 print(' inline ')
-    #                 move_val = self[add_axial_coords( coords_from[0] , direction )].val
-    #
-    #                 if( move_val == 0 ):
-    #                     for coord in coords_from:
-    #                         self.direction_move( [coord] , direction )
-    #
-    #                 elif( move_val == 1 and self[ coords_from[ 0 ] ].val == 2 ):
-    #                     push_count = 1
-    #
-    #                     new_coord = add_axial_coords( coords_from[0] , direction )
-    #
-    #
-    #                     while push_count < max(2, len( coords_from ) ):
-    #                         new_coord = add_axial_coords( new_coord , direction )
-    #
-    #                         if( self[ new_coord ] is None ):
-    #                             new_coord = new_coord - direction
-    #                             for i in range( push_count + len(coords_from) - 1 ):
-    #
-    #                                 prev_coord = new_coord - direction
-    #                                 temp_val = self[ prev_coord ].val
-    #                                 self[ new_coord ] = temp_val
-    #                                 new_coord = prev_coord
-    #
-    #
-    #                             self[ prev_coord ] = 0
-    #
-    #                             break
-    #
-    #                         if( self[ new_coord ].val == 1 ):
-    #                             push_count += 1
-    #
-    #                         if( self[ new_coord ].val == 0 ):
-    #                             for i in range( push_count + 1 ):
-    #                                 self.direction_move( [subtract_axial_coords( new_coord, direction )] , direction )
-    #                                 new_coord = subtract_axial_coords( new_coord, direction )
-    #
-    #                             for coord in coords_from:
-    #                                 self.direction_move( [coord] , direction )
-    #
-    #                             break
-    #
-    #
-    #                         if ( self[ new_coord ].val == 2 ):
-    #                             break
-    #
-    #
-    #                             for coord in coords_from:
-    #                                 self.direction_move( [coord] , direction )
-    #
-    #                             break
-    #
-    #                 elif( move_val == 2 and self[ coords_from[ 0 ] ].val == 1 ):
-    #
-    #                     push_count = 1
-    #
-    #                     new_coord = add_axial_coords( coords_from[0] , direction )
-    #
-    #
-    #
-    #                     while push_count < max(2, len( coords_from ) ):
-    #                         new_coord = add_axial_coords( new_coord , direction )
-    #
-    #                         if( self[ new_coord ] is None ):
-    #                             new_coord = new_coord - direction
-    #                             for i in range( push_count + len(coords_from) - 1 ):
-    #                                 prev_coord = new_coord - direction
-    #                                 temp_val = self[ prev_coord ].val
-    #                                 self[ new_coord ] = temp_val
-    #                                 new_coord = prev_coord
-    #
-    #                             self[ prev_coord ] = 0
-    #
-    #                             break
-    #
-    #                         if( self[ new_coord ].val == 2 ):
-    #                             push_count += 1
-    #
-    #                         if( self[ new_coord ].val == 0 ):
-    #                             for i in range( push_count + 1 ):
-    #                                 self.direction_move( [subtract_axial_coords( new_coord, direction )] , direction )
-    #                                 new_coord = subtract_axial_coords( new_coord, direction )
-    #
-    #                             for coord in coords_from:
-    #                                 self.direction_move( [coord] , direction )
-    #
-    #                             break
-    #
-    #
-    #                         if ( self[ new_coord ].val == 1 ):
-    #                             break
-    #
-    #
-    #                             for coord in coords_from:
-    #                                 self.direction_move( [coord] , direction )
-    #
-    #                             break
-    #
-    #
-    #             #if not inline, then broadside
-    #             else:
-    #                 all_moves_valid = True
-    #                 for coord in coords_from:
-    #                     if( (self.is_empty_neighbor( coord, ( coord + direction ) ) ) and (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) and (self[  add_axial_coords( coord , direction ) ].val == 0) ):
-    #                         pass
-    #                     else:
-    #                         all_moves_valid = False
-    #                         break
-    #
-    #                 if( all_moves_valid ):
-    #                     for coord_from in coords_from:
-    #                         coord_to = add_axial_coords( coord_from , direction )
-    #                         #
-    #                         # print('move')
-    #                         # print('from: ', coord_from )
-    #                         # print('to: ', coord_to)
-    #
-    #                         temp_val = self[ coord_from ].val
-    #                         self[ coord_from ] = self[ coord_to ].val
-    #                         self[ coord_to ] = temp_val
-    # def direction_move_checker( self , coords_from: list, direction: axial_coord ):
-    #     def push_checker():
-    #         coord_to = ( coords_from[0] + direction ) #had to do this to avoid UnBoundLocalError, which I understand but don't really know why it exists
-    #
-    #         push_count = 1
-    #         if( coord_to_val == AbaloneBoard.BLACK ):
-    #             coord_from_val = AbaloneBoard.WHITE
-    #
-    #         else:
-    #             coord_from_val = AbaloneBoard.BLACK
-    #
-    #         while push_count < max(2, len( coords_from ) ):
-    #             coord_to = ( coord_to + direction )  #referencing variable in one frame up, is this good practice?
-    #
-    #             if( self[ coord_to ] is None ):
-    #                 return 'point'
-    #
-    #
-    #             if( self[ coord_to ].val == coord_to_val ):
-    #                 push_count += 1
-    #
-    #             if( self[ coord_to ].val == AbaloneBoard.EMPTY ):
-    #                 return 'push'
-    #
-    #
-    #
-    #             if ( self[ coord_to ].val == coord_from_val ):
-    #                 break
-    #
-    #
-    #     if ( len( coords_from ) == 1 ):
-    #         coord_from = coords_from[0]
-    #         coord_to = coord_from + direction
-    #         if( self.is_empty_neighbor( coord_from , coord_to ) ):
-    #             return True, 'one'
-    #
-    #     elif ( 2 <= len( coords_from ) <= 3  ):
-    #         if( direction == ( coords_from[0] - coords_from[1] ) ):
-    #             coord_to = ( coords_from[0] + direction )
-    #
-    #             if( self[ coord_to ] is None ):
-    #                 return None
-    #
-    #             coord_to_val = self[ coord_to ].val
-    #
-    #
-    #             if( coord_to_val == AbaloneBoard.EMPTY  ):
-    #                 for coord in coords_from:
-    #                     if (self.direction_move_checker( [coord] , direction )):
-    #                         return False
-    #                 return True
-    #
-    #             #defines a 'push' move
-    #             elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
-    #                     return push_checker()
-    #
-    #         #broadside move
-    #         else:
-    #             all_moves_valid = True
-    #             for coord in coords_from:
-    #                 if( not ( self.is_empty_neighbor( coord, ( coord + direction ) ) ) ):
-    #                     all_moves_valid = False
-    #                     break
-    #
-    #
-    #                 if( not (self[ coord ].val == AbaloneBoard.WHITE or self[ coord ].val == AbaloneBoard.BLACK) ):
-    #                     all_moves_valid = False
-    #                     break
-    #
-    #
-    #                 if( not (self[ ( coord + direction ) ].val == AbaloneBoard.EMPTY) ):
-    #                     all_moves_valid = False
-    #                     break
-    #             return all_moves_valid

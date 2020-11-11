@@ -4,8 +4,6 @@ import pygame
 
 import random
 
-
-
 import test
 import abalone.model.board
 from abalone.model.board import axial_coord

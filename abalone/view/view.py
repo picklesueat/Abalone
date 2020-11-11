@@ -3,13 +3,17 @@ from math import sin,cos, sqrt, ceil,pi
 import sys
 import os
 
+from abalone import BLACK, WHITE, EMPTY
+
+
+
 from abalone.model.board import AbaloneBoard, Hex, axial_coord
 
 from abalone.controller import Game, Controller
 
 def main():
     def update_board( ):
-        screen.fill(WHITE)
+        screen.fill(COLOR_WHITE)
         hexs = make_view( cont.game )
 
 
@@ -33,7 +37,7 @@ def main():
         pi2 = 2 * pi
 
         return pygame.draw.lines(Surface,
-              BLACK,
+              COLOR_BLACK,
               True,
               [(cos(i / 6 * pi2 + ( pi2 / 4)) * radius + position[0], sin(i / 6 * pi2 + ( pi2 / 4)) * radius + position[1]) for i in range(0, 6)])
 
@@ -75,10 +79,10 @@ def main():
 
         for hex_view in hex_lst:
             draw_hexagon( screen, hex_view.radius, ( hex_view.x , hex_view.y ) )
-            if( hex_view.val == 2 ):
+            if( hex_view.val == WHITE ):
                 screen.blit(white_ball, (hex_view.x - hex_view.radius / 2 , hex_view.y - hex_view.radius / 2 ))
 
-            if( hex_view.val == 1 ):
+            if( hex_view.val == BLACK ):
                 screen.blit( black_ball, (hex_view.x - hex_view.radius / 2 , hex_view.y - hex_view.radius / 2 ))
 
         pygame.display.flip()
@@ -117,8 +121,8 @@ def main():
         return ( x , y )
 
     IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'Images')
-    BLACK = 0,0,0
-    WHITE = 200,200,200
+    COLOR_BLACK = 0,0,0
+    COLOR_WHITE = 230, 230 , 230
     SCREEN_SIZE = WIDTH, HEIGHT = 1800,1000
 
     pygame.init()
