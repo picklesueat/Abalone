@@ -124,12 +124,28 @@ def game( size , two_player = True , depth = 2 ):
                     pygame.display.flip()
 
 
-def main():
-    menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Abalone',
+def game_size_menu():
+    menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Game Size',
+                       theme=pygame_menu.themes.THEME_BLUE)
+
+
+    menu.mainloop( screen )
+
+
+def game_type_menu(  ):
+    menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Game',
                        theme=pygame_menu.themes.THEME_BLUE)
 
     menu.add_button('Two Player', game, 3 )
     menu.add_button('ArTiFicAil InTeLliGence', game, 3 , False , 2 )
-    menu.add_button('Quit', pygame_menu.events.EXIT)
+
+    menu.mainloop( screen )
+
+def main():
+    menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Abalone',
+                       theme=pygame_menu.themes.THEME_BLUE)
+
+    menu.add_button('Play', game_type_menu )
+    menu.add_button('Quit', pygame_menu.events.EXIT )
 
     menu.mainloop( screen )
