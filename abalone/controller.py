@@ -44,6 +44,7 @@ class Controller():
                 direction =  (self.prev_click_coords[0] - coord).inverse()
                 self.game.make_turn( self.prev_click_coords , direction )
                 self.prev_click_coords = []
+                self.updated = True
 
                 if( self.two_player == False):
                     self.game.make_AI_turn()
