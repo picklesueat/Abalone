@@ -181,33 +181,23 @@ class PlayerVSAIGame( Game ):
 
         self.turn = BLACK
 
-        self.check_for_AI_move()
-
-    def make_move( self , coords_from: list , direction: axial_coord ):
-        super().make_turn( coords_from , direction )
+        self.make_AI_turn()
 
 
-    def make_turn( self , coords_from , direction ):
-        self.make_move( coords_from , direction )
-        self.check_for_AI_move()
-
-    def check_for_AI_move( self ):
-        if( self.turn == BLACK ):
-            time.sleep( .5 )
-            self.AI_move()
-
-
-    def AI_move( self ):
+    def make_AI_turn( self ):
+        if( self.turn != BLACK ):
+            return None
+            
         move = self.minimax( self.black_player.depth )
 
         move = move[1]
-        self.make_move( move.last_move[0] , move.last_move[1] )
+        self.make_turn( move.last_move[0] , move.last_move[1] )
 
     def children_generator( self ):
         children = []
         for move in self.board.move_generation( self.turn ):
             temp = deepcopy( self )
-            temp.make_move( move[0] , move[1] )
+            temp.make_turn( move[0] , move[1] )
             children.append( temp )
 
         return children

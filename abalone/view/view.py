@@ -11,6 +11,9 @@ from abalone.model.board import AbaloneBoard, Hex, axial_coord
 
 from abalone.controller import Controller
 
+
+
+
 def main():
     def update_board( ):
         screen.fill(COLOR_WHITE)
@@ -64,7 +67,6 @@ def main():
     def load_pieces( radius ):
 
         radius = int(radius)
-        print( IMAGES_DIR )
         white_ball = pygame.image.load(IMAGES_DIR + "/white_ball.jpg")
         black_ball = pygame.image.load(IMAGES_DIR + "/black_ball.jpg")
 
@@ -129,8 +131,7 @@ def main():
     screen = pygame.display.set_mode(SCREEN_SIZE)
 
 
-    cont = Controller( 2 , two_player = False , depth = 2 )
-    print( cont.size )
+    cont = Controller( 3 , two_player = False , depth = 2 )
 
     radius = update_board()
 
@@ -138,7 +139,6 @@ def main():
 
     while True:
         pygame.time.delay( 100 )
-
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT: sys.exit()
@@ -149,17 +149,13 @@ def main():
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
-
                 pos = ( pos[0] - 200, pos[1] - 50* (7 - cont.size ))
-
                 pos = axial_coord( *hex_round(  *pixel_to_hex( pos )  ) )
 
-                if( cont.is_valid_click( pos ) ):
-                    if cont.prev_click_coords :
-                        cont.take_click( pos )
-                    else:
-                        if cont.take_first_click( pos ):
-                            pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
-                            pygame.display.flip()
-                if cont.updated:
-                    update_board()
+                cont.take_click( pos )
+
+                update_board()
+
+                if( cont.prev_click_coords ):
+                    pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
+                    pygame.display.flip()
