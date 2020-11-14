@@ -5,8 +5,6 @@ import os
 
 from abalone import BLACK, WHITE, EMPTY
 
-
-
 from abalone.model.board import AbaloneBoard, Hex, axial_coord
 
 from abalone.controller import Controller
@@ -131,11 +129,9 @@ def main():
     screen = pygame.display.set_mode(SCREEN_SIZE)
 
 
-    cont = Controller( 3 , two_player = False , depth = 2 )
+    cont = Controller( 4 , two_player = False , depth = 2 )
 
     radius = update_board()
-
-
 
     while True:
         pygame.time.delay( 100 )

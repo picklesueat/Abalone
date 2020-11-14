@@ -133,7 +133,7 @@ class Game():
                 self.last_move = [ coords_from , direction , move_type ]
 
             else:
-                return 'Illegal Move try again'
+                return None
 
 
             self.check_winner()
@@ -187,7 +187,7 @@ class PlayerVSAIGame( Game ):
     def make_AI_turn( self ):
         if( self.turn != BLACK ):
             return None
-            
+
         move = self.minimax( self.black_player.depth )
 
         move = move[1]
@@ -213,27 +213,20 @@ class PlayerVSAIGame( Game ):
             eval += self.centerness_eval() / 10
             return eval
 
-            #this doesn't really work at all
+    #sooo slow
     def centerness_eval( self ):
-        #change is distance to center
+        black_dist = 0
+        white_dist = 0
         center = self.board.center
-        pre_distance_to_center = 0
-        post_distance_to_center = 0
-        move = self.last_move
 
-        for piece in move[0]:
-            pre_distance_to_center += piece.distance( center )
+        for hex in self:
+            if( hex.val == BLACK ):
+                black_dist += hex.axial_coord.distance( center )
 
-        for piece in move[0]:
-            piece_post = piece + move[1]
-            post_distance_to_center += piece_post.distance( center )
+            if( hex.val == WHITE ):
+                white_dist += hex.axial_coord.distance( center )
 
-        change_in_dist = pre_distance_to_center - post_distance_to_center
-
-        if( self.turn == WHITE ):
-            return change_in_dist
-        else:
-            return 0
+        return 1 / black_dist - white_dist / 100
 
 
     def minimax( self , depth , maximizing_player = True ): #AI AI AI
@@ -261,10 +254,3 @@ class PlayerVSAIGame( Game ):
                     minEval = eval
                     worst_board = child
             return minEval, worst_board
-
-
-if __name__ == '__main__':
-    test = Game( 3 )
-
-    for child in test.children_generator():
-        print( child )
