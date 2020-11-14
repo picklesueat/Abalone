@@ -9,7 +9,7 @@ from abalone import BLACK, WHITE, EMPTY
 
 from abalone.model.board import AbaloneBoard, Hex, axial_coord
 
-from abalone.controller import Game, Controller
+from abalone.controller import Controller
 
 def main():
     def update_board( ):
@@ -129,12 +129,12 @@ def main():
     screen = pygame.display.set_mode(SCREEN_SIZE)
 
 
-    cont = Controller( 3 , two_player = False , depth = 3 )
+    cont = Controller( 2 , two_player = False , depth = 2 )
+    print( cont.size )
 
     radius = update_board()
 
 
-    prev_click = []
 
     while True:
         pygame.time.delay( 100 )
@@ -157,13 +157,9 @@ def main():
                 if( cont.is_valid_click( pos ) ):
                     if cont.prev_click_coords :
                         cont.take_click( pos )
-
-                        if( cont.updated ):
-                            update_board()
-                            cont.update()
-                            update_board()
-
                     else:
                         if cont.take_first_click( pos ):
                             pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
                             pygame.display.flip()
+                if cont.updated:
+                    update_board()

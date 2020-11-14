@@ -464,6 +464,7 @@ class AbaloneBoard( HexShapedBoard ):
 
             return outcome
 
+
         elif ( 2 <= num_pieces_to_move <= 3  ):
             #they must be in a 'row' for any other movetype
             if self.is_in_row( coords_from ):

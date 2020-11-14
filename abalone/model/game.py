@@ -27,29 +27,17 @@ class Game():
             self.depth = depth
 
 
-    def __init__( self , size , two_player = True , depth = 1 ):
+    def __init__( self , size ):
         self.size = size
 
         self.board = board.AbaloneBoard( self.size )
         self.add_pieces()
 
         self.lives = self.lives[ self.size ]
-        if two_player:
-            self.white_player = self.Player( WHITE , self.lives)
-            self.black_player = self.Player( BLACK , self.lives)
-
-        else:
-            self.white_player = self.Player( WHITE , self.lives)
-            self.black_player = self.AI( BLACK , self.lives , depth )
-
         self.winner = 0
 
         self.turn = BLACK
-        self.two_player = two_player
-        self.check_for_AI_move()
         self.last_move = None
-
-
 
 
     def add_pieces( self ):
@@ -129,10 +117,10 @@ class Game():
             self.winner = WHITE
 
     def make_turn( self , coords_from: list , direction: axial_coord ):
-        if( self.winner == 0  ):
+        if( self.winner == EMPTY  ):
             for coord in coords_from:
                 if( self.board[ coord ] is None or self.board[ coord ].val != self.turn ):
-                    return 'Error wrong player'
+                    return None
 
             move_type = self.board.direction_move( coords_from, direction )
             if( move_type == self.board.POINT ):
@@ -147,34 +135,79 @@ class Game():
             else:
                 return 'Illegal Move try again'
 
+
             self.check_winner()
 
 
+
+    def __str__( self ):
+        return str( self.board )
+
+    def __len__( self ):
+        return self.size
+
+    def __iter__( self ):
+        return iter( self.board )
+
+    def __getitem__( self, coords ):
+        return self.board[ coords ]
+
+    def __setitem__( self, coords, val ):
+        self.board[ coords ] = val
+
+
+
+
+
+
+
+class TwoPlayerGame( Game ):
+    def __init__( self , size ):
+        super().__init__( size )
+
+        self.white_player = self.Player( WHITE , self.lives)
+        self.black_player = self.Player( BLACK , self.lives)
+
+        self.turn = BLACK
+
+
+
+class PlayerVSAIGame( Game ):
+    def __init__( self , size , depth = 1):
+        super().__init__( size )
+
+        self.white_player = self.Player( WHITE , self.lives)
+        self.black_player = super().AI( BLACK , self.lives , depth )
+
+        self.turn = BLACK
+
+        self.check_for_AI_move()
+
+    def make_move( self , coords_from: list , direction: axial_coord ):
+        super().make_turn( coords_from , direction )
+
+
+    def make_turn( self , coords_from , direction ):
+        self.make_move( coords_from , direction )
+        self.check_for_AI_move()
+
     def check_for_AI_move( self ):
-        if( self.turn == BLACK and self.two_player == False ):
+        if( self.turn == BLACK ):
             time.sleep( .5 )
             self.AI_move()
 
 
     def AI_move( self ):
-        # moves = self.board.move_generation( self.turn )
-        #
-        # rand_move = random.randint( 0 , len( moves ) - 1 )
-        # move = moves[ rand_move ]
-        #
-        # self.make_turn( move[0] , move[1] )
-
         move = self.minimax( self.black_player.depth )
 
-
         move = move[1]
-        self.make_turn( move.last_move[0] , move.last_move[1] )
+        self.make_move( move.last_move[0] , move.last_move[1] )
 
     def children_generator( self ):
         children = []
         for move in self.board.move_generation( self.turn ):
             temp = deepcopy( self )
-            temp.make_turn( move[0] , move[1] )
+            temp.make_move( move[0] , move[1] )
             children.append( temp )
 
         return children
@@ -190,7 +223,7 @@ class Game():
             eval += self.centerness_eval() / 10
             return eval
 
-
+            #this doesn't really work at all
     def centerness_eval( self ):
         #change is distance to center
         center = self.board.center
@@ -207,10 +240,10 @@ class Game():
 
         change_in_dist = pre_distance_to_center - post_distance_to_center
 
-        if( self.board[ move[0][0] + self.last_move[1] ].val == BLACK ):
+        if( self.turn == WHITE ):
             return change_in_dist
         else:
-            return -change_in_dist
+            return 0
 
 
     def minimax( self , depth , maximizing_player = True ): #AI AI AI
@@ -238,26 +271,6 @@ class Game():
                     minEval = eval
                     worst_board = child
             return minEval, worst_board
-
-
-    def __str__( self ):
-        return str( self.board )
-
-    def __len__( self ):
-        return self.size
-
-    def __iter__( self ):
-        return iter( self.board )
-
-    def __getitem__( self, coords ):
-        return self.board[ coords ]
-
-    def __setitem__( self, coords, val ):
-        self.board[ coords ] = val
-
-
-
-
 
 
 if __name__ == '__main__':
