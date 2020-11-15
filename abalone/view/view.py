@@ -19,8 +19,11 @@ IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'Images')
 COLOR_BLACK = 0,0,0
 COLOR_WHITE = 230, 230 , 230
 SCREEN_SIZE = WIDTH, HEIGHT = 1800,1000
+
+
 pygame.init()
 screen = pygame.display.set_mode(SCREEN_SIZE)
+
 
 def game( size , two_player = True , depth = 2 ):
     def load_pieces():
@@ -33,8 +36,8 @@ def game( size , two_player = True , depth = 2 ):
         return white_ball, black_ball
 
     def hex_to_pixel( coord  ):
-        y = ( coord.y * radius * 3 /2)
-        x = (sqrt(3) * radius * ( coord.y / 2 + coord.x))
+        y = ( coord.y * radius * 3 /2) + 1/size * 400
+        x = (sqrt(3) * radius * ( coord.y / 2 + coord.x)) + 1/size * 400
 
         return pixel_coord(x,y)
 
@@ -60,8 +63,10 @@ def game( size , two_player = True , depth = 2 ):
         return rx, ry
 
     def pixel_to_hex( pos ):
-        x = ( ( sqrt(3)/3.0 * pos[0] )- 1.0/3 * pos[1] ) / radius
-        y = ( 2.0/3 * pos[1] )  / radius
+
+        pix_x , pix_y = pos.x - 1/size * 400 ,  pos.y - 1/size * 400
+        x = ( ( sqrt(3)/3.0 * pix_x )- 1.0/3 * pix_y ) / radius
+        y = ( 2.0/3 * pix_y )  / radius
 
         return ( x , y )
 
@@ -86,6 +91,8 @@ def game( size , two_player = True , depth = 2 ):
     def update_view( game ):
         screen.fill(COLOR_WHITE)
 
+        draw_lives( game )
+
         for hex in game:
             pixel_coord = hex_to_pixel( hex.axial_coord )
 
@@ -93,12 +100,24 @@ def game( size , two_player = True , depth = 2 ):
 
         cont.updated = False
 
+
+
+    def draw_lives( game ):
+        for i in range( game.black_player.lives ):
+            screen.blit( black_ball, ( i * radius + 20 , HEIGHT - radius ))
+
+
+        for j in range( game.white_player.lives ):
+            screen.blit( white_ball, (WIDTH - j * radius - 130 ,  HEIGHT - radius))
+
+
+
     cont = Controller( size , two_player  , depth )
     radius = int( min(SCREEN_SIZE)/ ((cont.size * 3 )) )
     white_ball, black_ball = load_pieces()
 
-
     update_view( cont.game )
+
     while True:
         pygame.time.delay( 100 )
 
@@ -111,7 +130,7 @@ def game( size , two_player = True , depth = 2 ):
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
-                pos = ( pos[0], pos[1])
+                pos = pixel_coord( pos[0] , pos[1] )
                 pos = axial_coord( *hex_round(  *pixel_to_hex( pos )  ) )
 
                 cont.take_click( pos )
@@ -119,25 +138,36 @@ def game( size , two_player = True , depth = 2 ):
                 if( cont.updated ):
                     update_view( cont.game )
 
+                cont.check_for_AI_move()
+
+
+                if( cont.updated ):
+                    update_view( cont.game )
+
+
+
                 if( cont.prev_click_coords ):
                     pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
                     pygame.display.flip()
 
 
-def game_size_menu():
-    menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Game Size',
-                       theme=pygame_menu.themes.THEME_BLUE)
-
-
-    menu.mainloop( screen )
 
 
 def game_type_menu(  ):
     menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Game',
                        theme=pygame_menu.themes.THEME_BLUE)
 
-    menu.add_button('Two Player', game, 3 )
-    menu.add_button('ArTiFicAil InTeLliGence', game, 3 , False , 2 )
+    size = 4
+
+    def set_size( val , siz ):
+        nonlocal size
+        size = siz
+
+    menu.add_selector('Size :', [('2', 2), ('3', 3), ('4', 4)], onchange=set_size)
+    menu.add_button('Two Player', game, size )
+    menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 3 )
+
+
 
     menu.mainloop( screen )
 

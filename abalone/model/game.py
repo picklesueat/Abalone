@@ -188,10 +188,12 @@ class PlayerVSAIGame( Game ):
         if( self.turn != BLACK ):
             return None
 
-        move = self.minimax( self.black_player.depth )
+        move = self.minimax( self.black_player.depth , float('-inf') , float('inf') )
 
         move = move[1]
-        self.make_turn( move.last_move[0] , move.last_move[1] )
+        self.make_turn( move[0] , move[1] )
+
+        return True
 
     def children_generator( self ):
         children = []
@@ -229,28 +231,34 @@ class PlayerVSAIGame( Game ):
         return 1 / black_dist - white_dist / 100
 
 
-    def minimax( self , depth , maximizing_player = True ): #AI AI AI
+    def minimax( self , depth , alpha , beta , maximizing_player = True ): #AI AI AI
         if( depth == 0 or self.winner == WHITE or self.winner == BLACK ):
-            return self.eval_func() , None
+            return self.eval_func() , self
 
         if maximizing_player:
             maxEval = float('-inf')
-            best_board = 0
+            best_move = []
 
             for child in self.children_generator():
-                eval , _ = child.minimax( depth - 1 , False )
+                eval , _ = child.minimax( depth - 1 , alpha , beta , False )
                 if( eval > maxEval ):
                     maxEval = eval
-                    best_board = child
-            return maxEval, best_board
+                    best_move = child.last_move
+                    alpha = max( alpha, maxEval)
+                    if beta <= alpha:
+                        break
+            return maxEval, best_move
 
         else:
             minEval = float('inf')
-            worst_board = 0
+            worst_move = []
 
             for child in self.children_generator():
-                eval, _ = child.minimax( depth - 1 , True )
+                eval, _ = child.minimax( depth - 1 , alpha , beta , True )
                 if( eval < minEval ):
                     minEval = eval
-                    worst_board = child
-            return minEval, worst_board
+                    worst_move = child.last_move
+                    beta = min( beta, minEval)
+                    if beta <= alpha:
+                        break
+            return minEval, worst_move

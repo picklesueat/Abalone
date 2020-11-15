@@ -46,5 +46,7 @@ class Controller():
                 self.prev_click_coords = []
                 self.updated = True
 
-                if( self.two_player == False):
-                    self.game.make_AI_turn()
+    def check_for_AI_move( self ):
+        if( self.two_player == False ):
+            if self.game.make_AI_turn():
+                self.updated = True
