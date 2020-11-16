@@ -76,70 +76,114 @@ class Hex():
         return "Hex({},{},{})".format( self.axial_coord.x , self.axial_coord.y , self.val )
 
 
-#Base data structure for storage of any hex grid (grid with hexagonal points)
-#stored in rhombus shapes (2-D list)
-#wraps square of Nones around board that are only visible from this class, and hidden form getter and setters
-class HexGrid():
+class Grid():
+    '''Forms a grid (2-d list) to store data, with a border of None's that is not directly accesible
+
+        None None None None None
+        None  0    0     0  None
+        None  1    2     3  None
+        None  4    5     6  None
+        None None None None None
+
+        >>> grid[axial_coords(2,1)]
+        3
+    '''
+
     def __init__( self, size):
         self.size = size
         self._grid =   [[None for row in range(size + 2 )] for col in range(size + 2)]
 
-    def __getitem__( self, coords  ):
+    def __getitem__( self, coords: axial_coord ):
         return self._grid[coords.y + 1 ][coords.x + 1 ]
 
-    def __setitem__( self, coords , val ):
+    def __setitem__( self, coords : axial_coord , val : int ) -> None:
         self._grid[coords.y + 1 ][coords.x + 1 ] = val
 
     def __len__( self ):
         return self.size
 
     def __iter__( self ):
-        return iter( self._grid )
-
-    def __str__( self ):
-        prt = ''
-        row_count = 1
-
-        for row in self:
-            for val in row:
-                prt += str( val ) + '     '
-            prt += '\n'
-            prt += '    ' * ( row_count)
-            row_count +=1
-
-        return prt
-
-    def __repr__( self ):
-        prt = ''
-        for row in self:
-            prt += repr(row) + '\n'
-
-        return prt
+        return Grid.GridIterator( self )
+        #return iter( self._grid )
 
 
+    class GridIterator():
+        def __init__( self , grid ):
+            self.grid = grid
+            self.size = grid.size
+            self.cur_row = 0
+            self.cur_col = 0
+
+        def __iter__( self ):
+            return self
+
+        def __next__( self ):
+            if( self.cur_col  == self.size ):
+                self.cur_row += 1
+                self.cur_col = 0
+
+            if( self.cur_row == self.size ):
+                raise StopIteration
 
 
+            coord = axial_coord( self.cur_col , self.cur_row )
 
-#Takes basic hexagonal data structure and builds a hexagon shaped grid out of it, lol lots of hexagons
+            self.cur_col += 1
+            return self.grid[ coord ]
+
+    #
+    # def __str__( self ):
+    #     prt = ''
+    #     row_count = 1
+    #
+    #     for row in self:
+    #         for val in row:
+    #             prt += str( val ) + '     '
+    #         prt += '\n'
+    #         prt += '    ' * ( row_count)
+    #         row_count +=1
+    #
+    #     return prt
+    #
+    # def __repr__( self ):
+    #     prt = ''
+    #     for row in self:
+    #         prt += repr(row) + '\n'
+    #
+    #     return prt
+
+
 class HexShapedBoard():
+    ''' Use Grid to make hexagonal board, where the indices of the array are axial coordinates
+
+        None None None None None
+        None None  0     0  None
+        None  1    2     3  None
+        None  4    5   None None
+        None None None None None
+
+        where each column forms a column in a hexagonal board at a 45 degree angle
+        and each row forms a row
+
+    '''
     def __init__( self, size ):
-        self.size = size
+        self.size = size  #distance from center to outermost hexs of regular hexagon
         self.center = axial_coord( self.size - 1 , self.size - 1  )
         self.layout = self.make_layout()
-        self.initialize_neighbors()  #this is weird but I'm not sure where else to put this
+        self.initialize_neighbors()
 
 
-    def make_layout( self ) -> HexGrid:
-        ''' Returns a HexGrid objects with Hexs objects forming a Hexagonal Shape.'''
-        empty_layout = HexGrid( self.size * 2 - 1 )
+    def make_layout( self ) -> Grid:
+        ''' Returns a Grid objects with Hexs objects forming a Hexagonal Shape.'''
 
-        for i in range( self.size * 2 - 1):
-            for j in range( self.size * 2 - 1):
+        grid_dist = self.size * 2 - 1
+        empty_layout = Grid( grid_dist )
+
+        for i in range( grid_dist ):
+            for j in range( grid_dist ):
                 coord = axial_coord( i , j )
                 if( coord.distance( self.center ) < self.size):
                     empty_layout[ coord ] = Hex( i , j )
-
-
 
         return empty_layout
 
@@ -157,7 +201,6 @@ class HexShapedBoard():
 
             ind_neigh_to_remove = []
 
-
         ind_neigh_to_remove = []
         for hex in self:
             for ind_neighbor in range ( len( hex.half_neighbors)):
@@ -170,9 +213,19 @@ class HexShapedBoard():
 
             ind_neigh_to_remove = []
 
-
     def __iter__( self ):
-        return self.HexBoardIterator( self )
+        return HexShapedBoard.HexBoardIterator( self.layout )
+        board = iter( self.layout )
+        print( self )
+
+        def piece_generator():
+            next_piece = next( board )
+            while next_piece is None:
+                next_piece = next( board )
+                print('yee')
+            yield next_piece
+
+        return piece_generator()
 
     def __len__( self ):
         return self.size
@@ -184,6 +237,11 @@ class HexShapedBoard():
         self.layout[ coords ].val = val
 
     def __str__( self ):
+        '''
+                      0  0
+                    1  2  3
+                     4  5
+        '''
         prt = ''
         row_count = 1
 
@@ -198,8 +256,10 @@ class HexShapedBoard():
 
 
     class HexBoardIterator():
-        def __init__( self, HexGrid ):
-            self.HexGrid = HexGrid
+        ''' Only iterates over non-None values in the Grid
+        '''
+        def __init__( self, Grid ):
+            self.Grid_iter = iter( Grid )
             self.cur_row = 0
             self.cur_col = 0
 
@@ -207,27 +267,34 @@ class HexShapedBoard():
             return self
 
         def __next__( self ):
-            coord = axial_coord( self.cur_col , self.cur_row )
-            hex = None
+            next_hex = next( self.Grid_iter )
 
-            while hex is None:
-                coord = axial_coord( self.cur_col , self.cur_row )
-                hex = self.HexGrid[ coord ]
-                self.cur_col += 1
+            while ( next_hex is None ):
+                next_hex = next( self.Grid_iter )
 
-                if( self.cur_col == self.HexGrid.size * 2 - 1 ):
-                    self.cur_col = 0
-                    self.cur_row += 1
+            return next_hex
+            # coord = axial_coord( self.cur_col , self.cur_row )
+            # hex = None
+            #
+            # while hex is None:
+            #     coord = axial_coord( self.cur_col , self.cur_row )
+            #     hex = self.Grid[ coord ]
+            #     self.cur_col += 1
+            #
+            #     if( self.cur_col == self.Grid.size * 2 - 1 ):
+            #         self.cur_col = 0
+            #         self.cur_row += 1
+            #
+            #     if( self.cur_row == self.Grid.size * 2 - 1 ):
+            #         raise StopIteration
+            # return hex
 
-                if( self.cur_row == self.HexGrid.size * 2 - 1 ):
-                    raise StopIteration
 
 
-            return hex
-
-
-#adds pieces and rules for abalone to hex board
 class AbaloneBoard( HexShapedBoard ):
+    ''' Adds Abalone Rules to the HexShapedBoard
+    '''
+
     #Move Types
     INVALID = 0
     VALID = 1
@@ -534,10 +601,11 @@ class AbaloneBoard( HexShapedBoard ):
 
 
 if __name__ == '__main__':
-    test = AbaloneBoard( 3 )
-    test.add_pieces()
-
-    print( test.direction_move( [ axial_coord( 0, 4)  ], axial_coord( 0 , -1 ) ) )
-    x = test.move_generation( 2 )
-    for move in x:
-        print( move )
+    pass
+    # test = AbaloneBoard( 3 )
+    # test.add_pieces()
+    #
+    # print( test.direction_move( [ axial_coord( 0, 4)  ], axial_coord( 0 , -1 ) ) )
+    # x = test.move_generation( 2 )
+    # for move in x:
+    #     print( move )
