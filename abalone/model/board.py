@@ -215,17 +215,16 @@ class HexShapedBoard():
 
     def __iter__( self ):
         return HexShapedBoard.HexBoardIterator( self.layout )
-        board = iter( self.layout )
-        print( self )
-
-        def piece_generator():
-            next_piece = next( board )
-            while next_piece is None:
-                next_piece = next( board )
-                print('yee')
-            yield next_piece
-
-        return piece_generator()
+        # board = iter( self.layout )
+        #
+        # def piece_generator():
+        #     next_piece = next( board )
+        #     while next_piece is None:
+        #         next_piece = next( board )
+        #         print('yee')
+        #     yield next_piece
+        #
+        # return piece_generator()
 
     def __len__( self ):
         return self.size
@@ -273,26 +272,37 @@ class HexShapedBoard():
                 next_hex = next( self.Grid_iter )
 
             return next_hex
-            # coord = axial_coord( self.cur_col , self.cur_row )
-            # hex = None
-            #
-            # while hex is None:
-            #     coord = axial_coord( self.cur_col , self.cur_row )
-            #     hex = self.Grid[ coord ]
-            #     self.cur_col += 1
-            #
-            #     if( self.cur_col == self.Grid.size * 2 - 1 ):
-            #         self.cur_col = 0
-            #         self.cur_row += 1
-            #
-            #     if( self.cur_row == self.Grid.size * 2 - 1 ):
-            #         raise StopIteration
-            # return hex
-
-
 
 class AbaloneBoard( HexShapedBoard ):
     ''' Adds Abalone Rules to the HexShapedBoard
+
+              Broadside move
+
+                    0 0
+                   1 1 0
+                    0 0
+
+                    to
+
+                    1 1
+                   0 0 0
+                    0 0
+
+
+             Inline move
+
+                    0 0
+                   1 1 2
+                    0 0
+
+                    to
+
+                    0 0
+                   0 1 1
+                    0 0
+
+
+
     '''
 
     #Move Types
@@ -301,7 +311,18 @@ class AbaloneBoard( HexShapedBoard ):
     PUSH  = 2
     POINT = 3
 
-    def is_valid_neighbor( self , coord_from , coord_to ):
+    @staticmethod
+    def is_valid_direction( direction : axial_coord ):
+        if not max( direction.x ,  direction.y ) <= 1:
+            return False
+        if not min( direction.x , direction.y ) >= -1:
+            return False
+        if not -2 < direction.x + direction.y < 2:
+            return False
+
+        return True
+
+    def is_valid_neighbor( self , coord_from , coord_to ) -> bool:
         return (coord_to) in self[ coord_from ].possible_neighbors
 
     def is_empty_neighbor( self , coord_from , coord_to ):
@@ -319,7 +340,9 @@ class AbaloneBoard( HexShapedBoard ):
         self[ coord_to ] = temp_val
 
 
-    def is_in_row( self , coords: list ):  #checks if the list of coords is in a row, and of the same type
+    def is_in_row( self , coords: list ):
+        '''Returns True if the list of coords is in a row, and of the same type
+        '''
         direction = coords[ 0 ] - coords[ 1 ]
 
         for i in range( len(coords) - 1 ):
@@ -428,31 +451,6 @@ class AbaloneBoard( HexShapedBoard ):
             if ( self[ coord_to ].val == coord_from_val ):
                 break
 
-    def all_moves( self , coords_from: list ):
-        move_list = []
-
-        directions = [ axial_coord( 1 , 0 ) , axial_coord( -1 , 0 ) , axial_coord( 0 , 1 ) , axial_coord( 0 , -1 ) , axial_coord( 1 , -1 ) , axial_coord( -1 , 1 ) ]
-
-        for direction in directions:
-            move_type = self.is_valid_move( coords_from , direction)
-            if( move_type ):
-                    move_list.append( [ coords_from , direction , move_type ]  )
-
-        return move_list
-
-
-    @staticmethod
-    def is_valid_direction( direction ):
-        if not max( direction.x ,  direction.y ) <= 1:
-            return False
-        if not min( direction.x , direction.y ) >= -1:
-            return False
-        if not -2 < direction.x + direction.y < 2:
-            return False
-
-        return True
-
-
     def is_valid_move( self , coords_from: list, direction: axial_coord ):
         if not self.is_valid_direction( direction ):
             return AbaloneBoard.INVALID
@@ -510,72 +508,26 @@ class AbaloneBoard( HexShapedBoard ):
                 self.make_broadside_move( coords_from , direction )
 
 
-    def direction_move( self, coords_from: list, direction: axial_coord ):
-        if not self.is_valid_direction( direction ):
-            return AbaloneBoard.INVALID
+    def direction_move( self, coords_from: List[axial_coord], direction: axial_coord ):
+        ''' Moves pieces in specified direction according to Abalone Rules
+            ( Crown jewel, combines all previous methods in this class )
+        '''
+        move_type = self.is_valid_move( coords_from , direction )
+        if( move_type ):
+            self.make_move( coords_from , direction )
 
-        num_pieces_to_move = len( coords_from )
-
-        #one_piece_move
-        if ( num_pieces_to_move == 1 ):
-            coord_from = coords_from[0]
-            coord_to = coord_from + direction
-
-            outcome = self.is_valid_one_piece_move( coord_from , coord_to )
-
-            if( outcome ):
-                self.make_one_piece_move( coord_from , coord_to )
-
-            return outcome
-
-
-        elif ( 2 <= num_pieces_to_move <= 3  ):
-            #they must be in a 'row' for any other movetype
-            if self.is_in_row( coords_from ):
-                if( direction.inverse() == ( coords_from[0] - coords_from[1] ) ):
-                    coords_from.reverse()
-
-
-                #if the move direction and row direction are the same it must be an inline move (technically subset)
-                if( direction == ( coords_from[0] - coords_from[1] ) ):
-                    coord_to = ( coords_from[0] + direction )
-                    if( self[ coord_to ] is None ):
-                        return AbaloneBoard.INVALID
-
-                    coord_to_val = self[ coord_to ].val
-
-                    if( coord_to_val == EMPTY  ):
-                        for coord in coords_from:
-                            self.make_move( [coord] , direction )
-                        return AbaloneBoard.VALID
-
-                    #defines a 'push' move
-                    elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
-
-                        push_outcome = self.is_valid_push_move( coords_from , direction )
-
-                        if( push_outcome ):
-                            self.make_push_move( coords_from , direction )
-                        return push_outcome
-
-
-                #broadside move
-                else:
-                    outcome = self.is_valid_broadside_move( coords_from , direction )
-                    if outcome:
-                        self.make_broadside_move( coords_from , direction )
-                    return outcome
-
+        return move_type
 
     def get_piece_formations( self , player ):
-        piece_formations = []
+        ''' Gets all different combinations of pieces that could be moved
 
-        #only use half of the directions so as not to double count
+            Uses 'half-neighbors' so as not to double count
+        '''
+        piece_formations = []
 
         for hex in self:
             if ( hex.val == player ):
                 piece_formations.append( [hex.axial_coord] )
-
                 for neigh in hex.half_neighbors:
                     if ( self[ neigh ].val == player):
                         piece_formations.append( [hex.axial_coord , neigh ] )
@@ -584,28 +536,79 @@ class AbaloneBoard( HexShapedBoard ):
                         if( self[ neigh_2 ] is not None ):
                             if ( self[ neigh_2 ].val == player):
                                 piece_formations.append( [hex.axial_coord , neigh , neigh_2 ] )
-
         return piece_formations
-
-
 
     def move_generation( self , player ):
         assert player == WHITE or player == BLACK
 
         piece_formations = self.get_piece_formations( player )
-
         move_list = []
         for group in piece_formations:
             move_list.extend( self.all_moves( group ) )
         return move_list
 
+    def all_moves( self , coords_from: list ):
+        all_direction_moves = []
+        directions = [ axial_coord( 1 , 0 ) , axial_coord( -1 , 0 ) , axial_coord( 0 , 1 ) , axial_coord( 0 , -1 ) , axial_coord( 1 , -1 ) , axial_coord( -1 , 1 ) ]
+        for direction in directions:
+            move_type = self.is_valid_move( coords_from , direction)
+            if( move_type ):
+                    all_direction_moves.append( [ coords_from , direction , move_type ]  )
+        return all_direction_moves
 
-if __name__ == '__main__':
-    pass
-    # test = AbaloneBoard( 3 )
-    # test.add_pieces()
-    #
-    # print( test.direction_move( [ axial_coord( 0, 4)  ], axial_coord( 0 , -1 ) ) )
-    # x = test.move_generation( 2 )
-    # for move in x:
-    #     print( move )
+
+        #
+        # if not self.is_valid_direction( direction ):
+        #     return AbaloneBoard.INVALID
+        #
+        # num_pieces_to_move = len( coords_from )
+        #
+        # #one_piece_move
+        # if ( num_pieces_to_move == 1 ):
+        #     coord_from = coords_from[0]
+        #     coord_to = coord_from + direction
+        #
+        #     outcome = self.is_valid_one_piece_move( coord_from , coord_to )
+        #
+        #     if( outcome ):
+        #         self.make_one_piece_move( coord_from , coord_to )
+        #
+        #     return outcome
+        #
+        #
+        # elif ( 2 <= num_pieces_to_move <= 3  ):
+        #     #they must be in a 'row' for any other movetype
+        #     if self.is_in_row( coords_from ):
+        #         if( direction.inverse() == ( coords_from[0] - coords_from[1] ) ):
+        #             coords_from.reverse()
+        #
+        #
+        #         #if the move direction and row direction are the same it must be an inline move (technically subset)
+        #         if( direction == ( coords_from[0] - coords_from[1] ) ):
+        #             coord_to = ( coords_from[0] + direction )
+        #             if( self[ coord_to ] is None ):
+        #                 return AbaloneBoard.INVALID
+        #
+        #             coord_to_val = self[ coord_to ].val
+        #
+        #             if( coord_to_val == EMPTY  ):
+        #                 for coord in coords_from:
+        #                     self.make_move( [coord] , direction )
+        #                 return AbaloneBoard.VALID
+        #
+        #             #defines a 'push' move
+        #             elif( coord_to_val != self[ coords_from[ 0 ] ].val ):
+        #
+        #                 push_outcome = self.is_valid_push_move( coords_from , direction )
+        #
+        #                 if( push_outcome ):
+        #                     self.make_push_move( coords_from , direction )
+        #                 return push_outcome
+        #
+        #
+        #         #broadside move
+        #         else:
+        #             outcome = self.is_valid_broadside_move( coords_from , direction )
+        #             if outcome:
+        #                 self.make_broadside_move( coords_from , direction )
+        #             return outcome
