@@ -1,4 +1,5 @@
 from collections import namedtuple
+from typing import List
 from abalone import BLACK, WHITE, EMPTY
 
 cube_coord = namedtuple('coord', ['x','y','z'])
@@ -36,11 +37,49 @@ class axial_coord():
         return axial_coord( self.x * -1 , self.y * -1 )
 
 
+#hex to be placed on valid board squares, helps precompute values
+class Hex():
+    def __init__( self, x_pos, y_pos, val = EMPTY ):
+        self.axial_coord = axial_coord( x_pos, y_pos )
+        self.cube_coord = cube_coord( x_pos, y_pos, -x_pos - y_pos )
+        self.possible_neighbors = self.get_neigh_coords( self.axial_coord )
+        self.half_neighbors = self.get_half_neigh_coords( self.axial_coord )
+        self.val = val
+
+
+    @staticmethod
+    def get_neigh_coords( axial_coords ) -> List[axial_coord]:
+        x,y  = axial_coords.x, axial_coords.y
+        neighbors = []
+        neighbors.append( axial_coord( x+1, y) )
+        neighbors.append( axial_coord( x, y+1) )
+        neighbors.append( axial_coord( x-1, y+1) )
+        neighbors.append( axial_coord( x-1, y) )
+        neighbors.append( axial_coord( x, y-1) )
+        neighbors.append( axial_coord( x+1, y-1) )
+        return neighbors
+
+    @staticmethod
+    def get_half_neigh_coords( axial_coords ):
+        x,y  = axial_coords.x, axial_coords.y
+        neighbors = []
+        neighbors.append( axial_coord( x+1, y) )
+        neighbors.append( axial_coord( x, y+1) )
+        neighbors.append( axial_coord( x-1, y+1) )
+
+        return neighbors
+
+    def __str__( self ):
+        return str( self.val )
+
+    def __repr__( self ):
+        return "Hex({},{},{})".format( self.axial_coord.x , self.axial_coord.y , self.val )
+
 
 #Base data structure for storage of any hex grid (grid with hexagonal points)
 #stored in rhombus shapes (2-D list)
 #wraps square of Nones around board that are only visible from this class, and hidden form getter and setters
-class HexGridStorage():
+class HexGrid():
     def __init__( self, size):
         self.size = size
         self._grid =   [[None for row in range(size + 2 )] for col in range(size + 2)]
@@ -77,50 +116,8 @@ class HexGridStorage():
 
         return prt
 
-        #Look up python getters and setters and add here
 
 
-#hex to be placed on valid board squares, helps precompute values
-class Hex():
-    def __init__( self, x_pos, y_pos, val = EMPTY ):
-        self.axial_coord = axial_coord( x_pos, y_pos )
-        self.cube_coord = cube_coord( x_pos, y_pos, -x_pos - y_pos )
-        self.possible_neighbors = self.get_neigh_coords( self.axial_coord )
-        self.half_neighbors = self.get_half_neigh_coords( self.axial_coord )
-        self.val = val
-
-
-    @staticmethod
-    def get_neigh_coords( axial_coords ):
-        x,y  = axial_coords.x, axial_coords.y
-        neighbors = []
-        neighbors.append( axial_coord( x+1, y) )
-        neighbors.append( axial_coord( x, y+1) )
-        neighbors.append( axial_coord( x-1, y+1) )
-
-        neighbors.append( axial_coord( x-1, y) )
-
-        neighbors.append( axial_coord( x, y-1) )
-
-        neighbors.append( axial_coord( x+1, y-1) )
-        return neighbors
-
-    @staticmethod
-    def get_half_neigh_coords( axial_coords ):
-        x,y  = axial_coords.x, axial_coords.y
-        neighbors = []
-        neighbors.append( axial_coord( x+1, y) )
-        neighbors.append( axial_coord( x, y+1) )
-        neighbors.append( axial_coord( x-1, y+1) )
-
-        return neighbors
-
-
-    def __str__( self ):
-        return str( self.val )
-
-    def __repr__( self ):
-        return "Hex({},{},{})".format( self.axial_coord.x , self.axial_coord.y , self.val )
 
 
 #Takes basic hexagonal data structure and builds a hexagon shaped grid out of it, lol lots of hexagons
@@ -129,12 +126,12 @@ class HexShapedBoard():
         self.size = size
         self.center = axial_coord( self.size - 1 , self.size - 1  )
         self.layout = self.make_layout()
-        self.update_neighbors()  #this is weird but I'm not sure where else to put this
+        self.initialize_neighbors()  #this is weird but I'm not sure where else to put this
 
-    #puts hexs in hexagonal pattern
-    def make_layout( self ):
-        empty_layout = HexGridStorage( self.size * 2 - 1 )
 
+    def make_layout( self ) -> HexGrid:
+        ''' Returns a HexGrid objects with Hexs objects forming a Hexagonal Shape.'''
+        empty_layout = HexGrid( self.size * 2 - 1 )
 
         for i in range( self.size * 2 - 1):
             for j in range( self.size * 2 - 1):
@@ -146,7 +143,8 @@ class HexShapedBoard():
 
         return empty_layout
 
-    def update_neighbors( self ):
+    def initialize_neighbors( self ):
+        ''' Removes all None neighbors for each Hex in the board '''
         ind_neigh_to_remove = []
         for hex in self:
             for ind_neighbor in range( len( hex.possible_neighbors) ):
@@ -178,7 +176,6 @@ class HexShapedBoard():
 
     def __len__( self ):
         return self.size
-
 
     def __getitem__( self, coords  ):
         return self.layout[ coords ]

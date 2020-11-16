@@ -17,7 +17,7 @@ pixel_coord = namedtuple('Pixel', ['x', 'y'] )
 
 IMAGES_DIR = os.path.join(os.path.dirname(__file__), 'Images')
 COLOR_BLACK = 0,0,0
-COLOR_WHITE = 230, 230 , 230
+COLOR_WHITE = 250, 250 , 250
 SCREEN_SIZE = WIDTH, HEIGHT = 1800,1000
 
 
@@ -84,12 +84,12 @@ def game( size , two_player = True , depth = 2 ):
         pi2 = 2 * pi
 
         return pygame.draw.lines(Surface,
-              COLOR_BLACK,
+              COLOR_WHITE,
               True,
-              [(cos(i / 6 * pi2 + ( pi2 / 4)) * radius + position[0], sin(i / 6 * pi2 + ( pi2 / 4)) * radius + position[1]) for i in range(0, 6)])
+              [(cos(i / 6 * pi2 + ( pi2 / 4)) * radius + position[0], sin(i / 6 * pi2 + ( pi2 / 4)) * radius + position[1]) for i in range(0, 6)] , width = 5)
 
     def update_view( game ):
-        screen.fill(COLOR_WHITE)
+        screen.fill(COLOR_BLACK)
 
         draw_lives( game )
 
@@ -157,7 +157,7 @@ def game_type_menu(  ):
     menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Game',
                        theme=pygame_menu.themes.THEME_BLUE)
 
-    size = 4
+    size = 3
 
     def set_size( val , siz ):
         nonlocal size
@@ -165,7 +165,7 @@ def game_type_menu(  ):
 
     menu.add_selector('Size :', [('2', 2), ('3', 3), ('4', 4)], onchange=set_size)
     menu.add_button('Two Player', game, size )
-    menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 3 )
+    menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 2 )
 
 
 
