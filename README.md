@@ -12,6 +12,9 @@ The blue rectangle indicates a piece is in 'hand'.  Click on pieces you want to 
 
 ## Usage
 
+main.py to run it
+
+
 Use game.py to change:
 * the starting configuration for each board size 
 * the AI evaluation function
