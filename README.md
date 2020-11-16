@@ -12,7 +12,7 @@ The blue rectangle indicates a piece is in 'hand'.  Click on pieces you want to 
 
 ## Usage
 
-main.py to run it
+**main.py** to run it
 
 
 Use game.py to change:
