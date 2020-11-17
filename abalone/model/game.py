@@ -198,7 +198,7 @@ class PlayerVSAIGame( Game ):
 
 
     def make_AI_turn( self ):
-        if( self.turn != BLACK ):
+        if( self.turn != BLACK or self.winner != EMPTY ):
             return None
 
         move = self.minimax( self.black_player.depth , float('-inf') , float('inf') )

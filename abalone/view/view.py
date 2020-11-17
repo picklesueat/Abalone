@@ -176,15 +176,31 @@ def game_type_menu(  ):
     menu = pygame_menu.Menu(HEIGHT/2, WIDTH/2 , 'Game',
                        theme=pygame_menu.themes.THEME_BLUE)
 
-    size = 3
+    size = 2
+    two_player = True
+    depth = 2
 
     def set_size( val , siz ):
         nonlocal size
         size = siz
 
+    def set_game_type( val , two_playe , dept):
+        nonlocal two_player , depth
+        two_player = two_playe
+        depth = depth
+
     menu.add_selector('Size :', [('2', 2), ('3', 3), ('4', 4)], onchange=set_size)
-    menu.add_button('Two Player', game, size )
-    menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 3 )
+    menu.add_selector('Game Type :', [('Two Player', True , 1), ('ArTiFicAil InTeLliGence', False , depth)], onchange=set_game_type)
+    # menu.add_button('Two Player', game, size )
+    # menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 2 )
+
+
+    def start():
+        game( size , two_player , depth )
+
+    menu.add_button('Start', start )
+
+
 
 
 
