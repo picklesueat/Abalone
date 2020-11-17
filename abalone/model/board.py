@@ -5,6 +5,19 @@ from abalone import BLACK, WHITE, EMPTY
 cube_coord = namedtuple('coord', ['x','y','z'])
 
 class axial_coord():
+    ''' Represents an Axial Coordinate, a way of describing a Hexagonal Coordinate System
+
+        Notes:
+        Although x is similar to the rectangular coordinate system we all know and love
+        y is at a 45 degree angle to x.
+        Axial Coordinates work well for easily thinking about positions on a hexagonal grid, but Cube coordinates make
+        calculating algorithms easier
+
+        Attributes
+        ----------
+        x -- the x value of the coordinate
+        y -- the y value of the coordinate
+        '''
     def __init__( self, x , y ):
         self.x = x
         self.y = y
@@ -37,8 +50,10 @@ class axial_coord():
         return axial_coord( self.x * -1 , self.y * -1 )
 
 
-#hex to be placed on valid board squares, helps precompute values
+
 class Hex():
+    ''' Hex placed on Grid spots, controls movements across Hexagonal Grid by pre-computing neighbors
+    '''
     def __init__( self, x_pos, y_pos, val = EMPTY ):
         self.axial_coord = axial_coord( x_pos, y_pos )
         self.cube_coord = cube_coord( x_pos, y_pos, -x_pos - y_pos )
@@ -104,8 +119,6 @@ class Grid():
 
     def __iter__( self ):
         return Grid.GridIterator( self )
-        #return iter( self._grid )
-
 
     class GridIterator():
         def __init__( self , grid ):
@@ -131,30 +144,8 @@ class Grid():
             self.cur_col += 1
             return self.grid[ coord ]
 
-    #
-    # def __str__( self ):
-    #     prt = ''
-    #     row_count = 1
-    #
-    #     for row in self:
-    #         for val in row:
-    #             prt += str( val ) + '     '
-    #         prt += '\n'
-    #         prt += '    ' * ( row_count)
-    #         row_count +=1
-    #
-    #     return prt
-    #
-    # def __repr__( self ):
-    #     prt = ''
-    #     for row in self:
-    #         prt += repr(row) + '\n'
-    #
-    #     return prt
-
-
 class HexShapedBoard():
-    ''' Use Grid to make hexagonal board, where the indices of the array are axial coordinates
+    ''' Hexagonal shaped group of Hexagons
 
         None None None None None
         None None  0     0  None
@@ -162,8 +153,6 @@ class HexShapedBoard():
         None  4    5   None None
         None None None None None
 
-        where each column forms a column in a hexagonal board at a 45 degree angle
-        and each row forms a row
 
     '''
     def __init__( self, size ):
@@ -215,6 +204,8 @@ class HexShapedBoard():
 
     def __iter__( self ):
         return HexShapedBoard.HexBoardIterator( self.layout )
+
+        # DOESNT WORK, I must be misunderstanding generators
         # board = iter( self.layout )
         #
         # def piece_generator():
@@ -274,9 +265,11 @@ class HexShapedBoard():
             return next_hex
 
 class AbaloneBoard( HexShapedBoard ):
-    ''' Adds Abalone Rules to the HexShapedBoard
+    '''Adds Abalone Rules to the HexShapedBoard
 
-              Broadside move
+        Methods
+        --------
+              Broadside move --
 
                     0 0
                    1 1 0
@@ -289,7 +282,7 @@ class AbaloneBoard( HexShapedBoard ):
                     0 0
 
 
-             Inline move
+             Inline move --
 
                     0 0
                    1 1 2
@@ -313,6 +306,8 @@ class AbaloneBoard( HexShapedBoard ):
 
     @staticmethod
     def is_valid_direction( direction : axial_coord ):
+        ''' Returns validity of direction
+        '''
         if not max( direction.x ,  direction.y ) <= 1:
             return False
         if not min( direction.x , direction.y ) >= -1:
@@ -327,7 +322,6 @@ class AbaloneBoard( HexShapedBoard ):
 
     def is_empty_neighbor( self , coord_from , coord_to ):
         return ( (coord_to) in self[ coord_from ].possible_neighbors ) and ( self[ coord_to ].val == EMPTY )
-
 
     def is_valid_one_piece_move( self , coord_from , coord_to ):
         if( self.is_empty_neighbor( coord_from , coord_to ) ):
@@ -509,8 +503,10 @@ class AbaloneBoard( HexShapedBoard ):
 
 
     def direction_move( self, coords_from: List[axial_coord], direction: axial_coord ):
-        ''' Moves pieces in specified direction according to Abalone Rules
-            ( Crown jewel, combines all previous methods in this class )
+        ''' Moves pieces in specified direction according to the Abalone Rules.
+
+            Notes:
+            Uses all previous methods in this class.
         '''
         move_type = self.is_valid_move( coords_from , direction )
         if( move_type ):
@@ -521,7 +517,8 @@ class AbaloneBoard( HexShapedBoard ):
     def get_piece_formations( self , player ):
         ''' Gets all different combinations of pieces that could be moved
 
-            Uses 'half-neighbors' so as not to double count
+            Notes:
+            Uses 'half-neighbors' so as not to double count, moves from top left to bottom right.
         '''
         piece_formations = []
 
@@ -531,21 +528,11 @@ class AbaloneBoard( HexShapedBoard ):
                 for neigh in hex.half_neighbors:
                     if ( self[ neigh ].val == player):
                         piece_formations.append( [hex.axial_coord , neigh ] )
-
                         neigh_2 = (neigh - hex.axial_coord) + neigh
                         if( self[ neigh_2 ] is not None ):
                             if ( self[ neigh_2 ].val == player):
                                 piece_formations.append( [hex.axial_coord , neigh , neigh_2 ] )
         return piece_formations
-
-    def move_generation( self , player ):
-        assert player == WHITE or player == BLACK
-
-        piece_formations = self.get_piece_formations( player )
-        move_list = []
-        for group in piece_formations:
-            move_list.extend( self.all_moves( group ) )
-        return move_list
 
     def all_moves( self , coords_from: list ):
         all_direction_moves = []
@@ -555,6 +542,15 @@ class AbaloneBoard( HexShapedBoard ):
             if( move_type ):
                     all_direction_moves.append( [ coords_from , direction , move_type ]  )
         return all_direction_moves
+
+    def move_generation( self , player ):
+        piece_formations = self.get_piece_formations( player )
+        move_list = []
+        for group in piece_formations:
+            move_list.extend( self.all_moves( group ) )
+        return move_list
+
+
 
 
         #

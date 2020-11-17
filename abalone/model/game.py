@@ -2,14 +2,21 @@ from abalone import BLACK, WHITE, EMPTY
 from . import board
 from .board import axial_coord
 from copy import deepcopy
-import random
-import time
-
-
 
 class Game():
-    WHITE = WHITE
-    BLACK = BLACK
+    ''' Represents a game of Abalone
+
+        Methods
+        -------
+        make_turn -- Takes a move and makes a turn
+
+        Attributes
+        ----------
+        size -- max distance from a hex to the center
+        lives -- lives for each player at start, function of size
+        board -- a board with a state
+        turn -- current players turn
+    '''
     lives = {2: 1,
             3:2,
             4:4,
@@ -34,7 +41,7 @@ class Game():
         self.add_pieces()
 
         self.lives = self.lives[ self.size ]
-        self.winner = 0
+        self.winner = EMPTY
 
         self.turn = BLACK
         self.last_move = None
@@ -96,49 +103,50 @@ class Game():
             self.board[ axial_coord( 3, 5)] = BLACK
 
     def change_player( self ):
+        ''' Changes the player to the opposite of the current one
+        '''
         if( self.turn == BLACK ):
             self.turn = WHITE
-
         else:
             self.turn = BLACK
 
     def lose_piece( self ):
+        ''' Takes away one life, from whichever players turn it is NOT
+        '''
         if( self.turn == BLACK ):
             self.black_player.lives = self.black_player.lives - 1
-
         else:
             self.white_player.lives = self.white_player.lives - 1
 
     def check_winner( self ):
+        ''' Checks if either player has lost
+        '''
         if( self.white_player.lives == 0 ):
             self.winner = BLACK
-
         if( self.black_player.lives == 0 ):
             self.winner = WHITE
 
     def make_turn( self , coords_from: list , direction: axial_coord ):
-        if( self.winner == EMPTY  ):
-            for coord in coords_from:
-                if( self.board[ coord ] is None or self.board[ coord ].val != self.turn ):
-                    return None
+        '''  Takes coordinates, makes move, and updates game state based on the move_type that is returned.
 
-            move_type = self.board.direction_move( coords_from, direction )
-            if( move_type == self.board.POINT ):
-                self.change_player()
-                self.lose_piece()
-                self.last_move = [ coords_from , direction , move_type ]
+            Arguments:
+            coords_from -- list of coords, known to be on the board, and not None
+        '''
+        move_type = self.board.direction_move( coords_from, direction )
 
-            elif( move_type ):
-                self.change_player()
-                self.last_move = [ coords_from , direction , move_type ]
+        if( move_type == self.board.POINT ):
+            self.change_player()
+            self.lose_piece()
+            self.last_move = [ coords_from , direction , move_type ]
 
-            else:
-                return None
+        elif( move_type ):
+            self.change_player()
+            self.last_move = [ coords_from , direction , move_type ]
 
+        else:
+            return None
 
-            self.check_winner()
-
-
+        self.check_winner()
 
     def __str__( self ):
         return str( self.board )
@@ -155,13 +163,9 @@ class Game():
     def __setitem__( self, coords, val ):
         self.board[ coords ] = val
 
-
-
-
-
-
-
 class TwoPlayerGame( Game ):
+    ''' Game class where both players are human
+    '''
     def __init__( self , size ):
         super().__init__( size )
 
@@ -170,9 +174,18 @@ class TwoPlayerGame( Game ):
 
         self.turn = BLACK
 
-
-
 class PlayerVSAIGame( Game ):
+    ''' Game class with one human, and on AI
+
+        Methods
+        -------
+        make_AI_turn -- gets AI move, and makes it
+        children_generator
+
+        Attributes
+        ----------
+        depth -- depth of AI search
+    '''
     def __init__( self , size , depth = 1):
         super().__init__( size )
 
@@ -196,6 +209,12 @@ class PlayerVSAIGame( Game ):
         return True
 
     def children_generator( self ):
+        ''' Returns a list of every possible move as their own games
+
+            Notes:
+            For each move in the possible moves of a given game state,
+            create a copy of the current game and make the move on that copy
+        '''
         children = []
         for move in self.board.move_generation( self.turn ):
             temp = deepcopy( self )
@@ -205,6 +224,11 @@ class PlayerVSAIGame( Game ):
         return children
 
     def eval_func( self ):
+        ''' Returns a numerical value of the 'goodness' of a given game state
+
+            Notes:
+            Only setup for Black, as in Black win is the highest number
+        '''
         if ( self.winner == WHITE ):
             return float('-1000')
         elif ( self.winner == BLACK ):
@@ -215,7 +239,6 @@ class PlayerVSAIGame( Game ):
             eval += self.centerness_eval() / 10
             return eval
 
-    #sooo slow
     def centerness_eval( self ):
         black_dist = 0
         white_dist = 0
@@ -232,6 +255,7 @@ class PlayerVSAIGame( Game ):
 
 
     def minimax( self , depth , alpha , beta , maximizing_player = True ): #AI AI AI
+
         if( depth == 0 or self.winner == WHITE or self.winner == BLACK ):
             return self.eval_func() , self
 

@@ -2,6 +2,7 @@ import pygame
 from math import sin,cos, sqrt, ceil,pi
 import sys
 import os
+import time
 
 from abalone import BLACK, WHITE, EMPTY
 
@@ -110,6 +111,18 @@ def game( size , two_player = True , depth = 2 ):
         for j in range( game.white_player.lives ):
             screen.blit( white_ball, (WIDTH - j * radius - 130 ,  HEIGHT - radius))
 
+    def display_winner_text( winner: int ):
+        pygame.font.init()
+        text = pygame.font.SysFont('Comic Sans MS', 100)
+        if( winner == 1 ):
+            text_surf = text.render('Black Wins', False , COLOR_WHITE )
+        else:
+            text_surf = text.render('White Wins', False , COLOR_WHITE )
+        screen.blit( text_surf , ( 0 , 0 ))
+        pygame.display.flip()
+
+        pygame.time.delay( 4000 )
+
 
 
     cont = Controller( size , two_player  , depth )
@@ -118,15 +131,17 @@ def game( size , two_player = True , depth = 2 ):
 
     update_view( cont.game )
 
-    while True:
+    running = True
+    while running:
         pygame.time.delay( 100 )
 
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: sys.exit()
+            if event.type == pygame.QUIT:
+                running = False
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
-                    sys.exit()
+                    running = False
 
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
@@ -150,6 +165,10 @@ def game( size , two_player = True , depth = 2 ):
                     pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
                     pygame.display.flip()
 
+            if( cont.check_winner() ):
+                display_winner_text( cont.check_winner() )
+                running = False
+
 
 
 
@@ -165,7 +184,7 @@ def game_type_menu(  ):
 
     menu.add_selector('Size :', [('2', 2), ('3', 3), ('4', 4)], onchange=set_size)
     menu.add_button('Two Player', game, size )
-    menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 2 )
+    menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 3 )
 
 
 
