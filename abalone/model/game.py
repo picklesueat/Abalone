@@ -3,6 +3,16 @@ from . import board
 from .board import axial_coord
 from copy import deepcopy
 
+
+class Move():
+    def __init__( self , coords_from , direction , move_type = board.AbaloneBoard.VALID ):
+        self.coords_from = coords_from
+        self.direction = direction
+        self.move_type = move_type
+
+    def __str__(self):
+        return "Pieces moved: {}, Direction: {}, Move Type {}".format( self.coords_from, self.direction, self.move_type )
+
 class Game():
     ''' Represents a game of Abalone
 
@@ -44,7 +54,7 @@ class Game():
         self.winner = EMPTY
 
         self.turn = BLACK
-        self.last_move = None
+        self.history = []
 
 
     def add_pieces( self ):
@@ -92,6 +102,9 @@ class Game():
             self.board[ axial_coord( 3, 1)] = WHITE
             self.board[ axial_coord( 4, 1)] = WHITE
             self.board[ axial_coord( 5, 1)] = WHITE
+            self.board[ axial_coord( 2, 1)] = WHITE
+            self.board[ axial_coord( 6, 1)] = WHITE
+
 
             self.board[ axial_coord( 0, 6)] = BLACK
             self.board[ axial_coord( 1, 6)] = BLACK
@@ -101,6 +114,9 @@ class Game():
             self.board[ axial_coord( 1, 5)] = BLACK
             self.board[ axial_coord( 2, 5)] = BLACK
             self.board[ axial_coord( 3, 5)] = BLACK
+            self.board[ axial_coord( 0, 5)] = BLACK
+            self.board[ axial_coord( 4, 5)] = BLACK
+
 
     def change_player( self ):
         ''' Changes the player to the opposite of the current one
@@ -117,6 +133,14 @@ class Game():
             self.black_player.lives = self.black_player.lives - 1
         else:
             self.white_player.lives = self.white_player.lives - 1
+
+    def undo_lose_piece( self ):
+        ''' Takes away one life, from whichever players turn it is NOT
+        '''
+        if( self.turn == BLACK ):
+            self.black_player.lives = self.black_player.lives + 1
+        else:
+            self.white_player.lives = self.white_player.lives + 1
 
     def check_winner( self ):
         ''' Checks if either player has lost
@@ -137,16 +161,30 @@ class Game():
         if( move_type == self.board.POINT ):
             self.change_player()
             self.lose_piece()
-            self.last_move = [ coords_from , direction , move_type ]
+            self.history.append(Move( coords_from , direction , move_type ))
+
+        elif( move_type == self.board.PUSH ):
+            self.change_player()
+            self.history.append(Move( coords_from , direction , move_type ))
 
         elif( move_type ):
             self.change_player()
-            self.last_move = [ coords_from , direction , move_type ]
+            self.history.append(Move( coords_from , direction ))
 
         else:
             return None
 
         self.check_winner()
+
+    def undo_last_turn( self ):
+        last_move = self.history.pop(-1)
+        self.board.undo_move( last_move.coords_from , last_move.direction , last_move.move_type )
+        if( last_move.move_type == board.AbaloneBoard.POINT ):
+            self.undo_lose_piece()
+        self.change_player()
+        self.winner = EMPTY
+
+
 
     def __str__( self ):
         return str( self.board )
@@ -202,9 +240,9 @@ class PlayerVSAIGame( Game ):
             return None
 
         move = self.minimax( self.black_player.depth , float('-inf') , float('inf') )
-
         move = move[1]
-        self.make_turn( move[0] , move[1] )
+
+        self.make_turn( move.coords_from , move.direction )
 
         return True
 
@@ -222,6 +260,7 @@ class PlayerVSAIGame( Game ):
             children.append( temp )
 
         return children
+
 
     def eval_func( self ):
         ''' Returns a numerical value of the 'goodness' of a given game state
@@ -258,31 +297,62 @@ class PlayerVSAIGame( Game ):
 
         if( depth == 0 or self.winner == WHITE or self.winner == BLACK ):
             return self.eval_func() , self
+        if( depth == 3):
+            for move in self.history:
+                print( move )
 
+            print('\n')
         if maximizing_player:
             maxEval = float('-inf')
             best_move = []
-
-            for child in self.children_generator():
-                eval , _ = child.minimax( depth - 1 , alpha , beta , False )
+            for move in self.board.move_generation( self.turn ):
+                self.make_turn( move[0] , move[1] )
+                eval , _ = self.minimax( depth - 1 , alpha , beta , False )
                 if( eval > maxEval ):
                     maxEval = eval
-                    best_move = child.last_move
+                    best_move = self.history[-1]
                     alpha = max( alpha, maxEval)
                     if beta <= alpha:
+                        self.undo_last_turn()
                         break
+                self.undo_last_turn()
             return maxEval, best_move
+
+
+            # for child in self.children_generator():
+            #     eval , _ = child.minimax( depth - 1 , alpha , beta , False )
+            #     if( eval > maxEval ):
+            #         maxEval = eval
+            #         best_move = child.history[-1]
+            #         alpha = max( alpha, maxEval)
+            #         if beta <= alpha:
+            #             break
+            # return maxEval, best_move
 
         else:
             minEval = float('inf')
             worst_move = []
 
-            for child in self.children_generator():
-                eval, _ = child.minimax( depth - 1 , alpha , beta , True )
+            # for child in self.children_generator():
+            #     eval, _ = child.minimax( depth - 1 , alpha , beta , True )
+            #     if( eval < minEval ):
+            #         minEval = eval
+            #         worst_move = child.history[-1]
+            #         beta = min( beta, minEval)
+            #         if beta <= alpha:
+            #             break
+            # return minEval, worst_move
+
+            #pseudo-code for alternative, when using undo move
+            for move in self.board.move_generation( self.turn ):
+                self.make_turn( move[0] , move[1] )
+                eval, _ = self.minimax( depth - 1 , alpha , beta , True )
                 if( eval < minEval ):
                     minEval = eval
-                    worst_move = child.last_move
+                    worst_move = self.history[-1]
                     beta = min( beta, minEval)
                     if beta <= alpha:
+                        self.undo_last_turn()
                         break
+                self.undo_last_turn()
             return minEval, worst_move

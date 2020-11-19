@@ -100,6 +100,7 @@ def game( size , two_player = True , depth = 2 ):
             draw_hex( pixel_coord , hex.val )
 
         cont.updated = False
+        pygame.display.flip()
 
 
 
@@ -121,8 +122,14 @@ def game( size , two_player = True , depth = 2 ):
         screen.blit( text_surf , ( 0 , 0 ))
         pygame.display.flip()
 
-        pygame.time.delay( 4000 )
-
+    def change_losers_piece( winner: int ):
+        nonlocal white_ball , black_ball
+        if(winner == 1):
+            white_ball = pygame.image.load(IMAGES_DIR + "/sponge.jpg")
+            white_ball = pygame.transform.scale(white_ball, (radius, radius))
+        else:
+            black_ball = pygame.image.load(IMAGES_DIR + "/sponge.jpg")
+            black_ball = pygame.transform.scale(black_ball, (radius, radius))
 
 
     cont = Controller( size , two_player  , depth )
@@ -143,6 +150,13 @@ def game( size , two_player = True , depth = 2 ):
                 if event.key == pygame.K_q:
                     running = False
 
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_u:
+                    cont.undo_move()
+                    update_view( cont.game )
+
+
+
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
                 pos = pixel_coord( pos[0] , pos[1] )
@@ -159,14 +173,15 @@ def game( size , two_player = True , depth = 2 ):
                 if( cont.updated ):
                     update_view( cont.game )
 
-
-
                 if( cont.prev_click_coords ):
                     pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
                     pygame.display.flip()
 
             if( cont.check_winner() ):
-                display_winner_text( cont.check_winner() )
+                change_losers_piece(cont.check_winner())
+                update_view(cont.game)
+                display_winner_text(cont.check_winner())
+                pygame.time.delay( 4000 )
                 running = False
 
 
@@ -178,7 +193,7 @@ def game_type_menu(  ):
 
     size = 2
     two_player = True
-    depth = 2
+    depth = 4
 
     def set_size( val , siz ):
         nonlocal size

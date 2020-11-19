@@ -48,3 +48,10 @@ class Controller():
         if( self.two_player == False ):
             if self.game.make_AI_turn():
                 self.updated = True
+
+    def undo_move( self ):
+        if self.two_player:
+            self.game.undo_last_turn()
+        else:
+            self.game.undo_last_turn()
+            self.game.undo_last_turn()

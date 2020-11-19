@@ -403,7 +403,7 @@ class AbaloneBoard( HexShapedBoard ):
                 push_count += 1
 
             if( self[ coord_to ].val == EMPTY ):
-                return AbaloneBoard.VALID
+                return AbaloneBoard.PUSH
 
 
 
@@ -550,7 +550,80 @@ class AbaloneBoard( HexShapedBoard ):
             move_list.extend( self.all_moves( group ) )
         return move_list
 
+    def undo_move( self , coords_from , direction , move_type ):
+        def simple_move_undo():
+            new_coords_from = []
+            for i in range( len(coords_from )):
+                new_coords_from.append(coords_from[i] + direction)
 
+            new_direction = direction.inverse()
+            self.make_move( new_coords_from , new_direction)
+
+        if move_type == self.VALID:
+            simple_move_undo()
+
+        elif move_type == self.POINT:
+            new_coords_from = []
+            for i in range( len(coords_from )):
+                new_coords_from.append(coords_from[i] + direction)
+
+            new_direction = direction.inverse()
+            self.make_move( new_coords_from , new_direction)
+
+
+            next_hex_inline = coords_from[0] + direction
+
+
+            if( self[ new_coords_from[0] ].val == WHITE ):
+                push_val = BLACK
+            else:
+                push_val = WHITE
+
+
+            for _ in range( len( coords_from ) - 1 ):
+                next_hex_inline = next_hex_inline + direction
+
+                if( self[ next_hex_inline ] is None ):
+                    if( self[ new_coords_from[0] ].val == WHITE ):
+                        self[ next_hex_inline + new_direction ] = BLACK
+                    else:
+                        self[ next_hex_inline + new_direction ] = WHITE
+                    break
+                elif( self[ next_hex_inline ].val == push_val ):
+                    self.make_move( [next_hex_inline] , new_direction )
+
+                else:
+                    break
+
+        else:
+            new_coords_from = []
+            for i in range( len(coords_from )):
+                new_coords_from.append(coords_from[i] + direction)
+
+            new_direction = direction.inverse()
+            self.make_move( new_coords_from , new_direction)
+
+
+            next_hex_inline = coords_from[0] + direction
+
+
+            if( self[ new_coords_from[0] ].val == WHITE ):
+                push_val = BLACK
+            else:
+                push_val = WHITE
+
+
+
+            for _ in range( len( coords_from ) - 1 ):
+                next_hex_inline = next_hex_inline + direction
+                if( self[ next_hex_inline ] is None ):
+                    break
+
+                elif( self[ next_hex_inline ].val == push_val ):
+                    self.make_move( [next_hex_inline] , new_direction )
+
+                else:
+                    break
 
 
         #
