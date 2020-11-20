@@ -294,7 +294,12 @@ class AbaloneBoard( HexShapedBoard ):
                    0 1 1
                     0 0
 
-
+            Attributes
+            ----------
+            INVALID - unable to make move under any of Abalone Rules
+            VALID - move made, only effects pieces in moved and has no side effects
+            PUSH - move made, also pushes pieces according to Abalone Rules, doesn't change the number of pieces on the board
+            POINT -move made, also pushes pieces according to Abalone Rules, changes number of pieces on the board
 
     '''
 
@@ -403,9 +408,7 @@ class AbaloneBoard( HexShapedBoard ):
                 push_count += 1
 
             if( self[ coord_to ].val == EMPTY ):
-                return AbaloneBoard.PUSH
-
-
+                return AbaloneBoard.PUSH * push_count
 
             if ( self[ coord_to ].val == coord_from_val ):
                 return AbaloneBoard.INVALID
@@ -559,35 +562,28 @@ class AbaloneBoard( HexShapedBoard ):
             new_direction = direction.inverse()
             self.make_move( new_coords_from , new_direction)
 
-        if move_type == self.VALID:
-            simple_move_undo()
+        simple_move_undo()
 
-        elif move_type == self.POINT:
-            new_coords_from = []
-            for i in range( len(coords_from )):
-                new_coords_from.append(coords_from[i] + direction)
-
-            new_direction = direction.inverse()
-            self.make_move( new_coords_from , new_direction)
+        new_direction = direction.inverse()
 
 
-            next_hex_inline = coords_from[0] + direction
 
-
-            if( self[ new_coords_from[0] ].val == WHITE ):
+        if move_type == self.POINT:
+            if( self[ coords_from[0] ].val == WHITE ):
                 push_val = BLACK
             else:
                 push_val = WHITE
 
+            if( coords_from[0] + direction != coords_from[1] ):
+                next_hex_inline = coords_from[0] + direction
+            else:
+                next_hex_inline = coords_from[-1] + direction
 
             for _ in range( len( coords_from ) - 1 ):
                 next_hex_inline = next_hex_inline + direction
 
                 if( self[ next_hex_inline ] is None ):
-                    if( self[ new_coords_from[0] ].val == WHITE ):
-                        self[ next_hex_inline + new_direction ] = BLACK
-                    else:
-                        self[ next_hex_inline + new_direction ] = WHITE
+                    self[ next_hex_inline + new_direction ] = push_val
                     break
                 elif( self[ next_hex_inline ].val == push_val ):
                     self.make_move( [next_hex_inline] , new_direction )
@@ -595,26 +591,20 @@ class AbaloneBoard( HexShapedBoard ):
                 else:
                     break
 
-        else:
-            new_coords_from = []
-            for i in range( len(coords_from )):
-                new_coords_from.append(coords_from[i] + direction)
-
-            new_direction = direction.inverse()
-            self.make_move( new_coords_from , new_direction)
-
-
-            next_hex_inline = coords_from[0] + direction
-
-
-            if( self[ new_coords_from[0] ].val == WHITE ):
+        # need an identifier of how many pieces were pushed
+        elif move_type % 2 == 0:
+            if( self[ coords_from[0] ].val == WHITE ):
                 push_val = BLACK
             else:
                 push_val = WHITE
 
+            if( coords_from[0] + direction != coords_from[1] ):
+                next_hex_inline = coords_from[0] + direction
+            else:
+                next_hex_inline = coords_from[-1] + direction
 
 
-            for _ in range( len( coords_from ) - 1 ):
+            for _ in range( move_type // 2 ):
                 next_hex_inline = next_hex_inline + direction
                 if( self[ next_hex_inline ] is None ):
                     break

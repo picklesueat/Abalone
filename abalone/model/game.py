@@ -117,6 +117,22 @@ class Game():
             self.board[ axial_coord( 0, 5)] = BLACK
             self.board[ axial_coord( 4, 5)] = BLACK
 
+        if( self.size == 5 ):
+            for hex in self.board:
+                if( hex.axial_coord.y == 0 or hex.axial_coord.y == 1 ):
+                    hex.val = WHITE
+
+                if( hex.axial_coord.y == self.size * 2 - 1 - 1 or  hex.axial_coord.y == self.size * 2 - 1 - 2 ):
+                    hex.val = BLACK
+
+            self.board[ axial_coord( 2, 6)] = BLACK
+            self.board[ axial_coord( 3, 6)] = BLACK
+            self.board[ axial_coord( 4, 6)] = BLACK
+
+            self.board[ axial_coord( 4, 2)] = WHITE
+            self.board[ axial_coord( 5, 2)] = WHITE
+            self.board[ axial_coord( 6, 2)] = WHITE
+
 
     def change_player( self ):
         ''' Changes the player to the opposite of the current one
@@ -156,6 +172,7 @@ class Game():
             Arguments:
             coords_from -- list of coords, known to be on the board, and not None
         '''
+
         move_type = self.board.direction_move( coords_from, direction )
 
         if( move_type == self.board.POINT ):
@@ -163,7 +180,7 @@ class Game():
             self.lose_piece()
             self.history.append(Move( coords_from , direction , move_type ))
 
-        elif( move_type == self.board.PUSH ):
+        elif( move_type % 2 == 0 and move_type != 0  ):
             self.change_player()
             self.history.append(Move( coords_from , direction , move_type ))
 
@@ -172,7 +189,14 @@ class Game():
             self.history.append(Move( coords_from , direction ))
 
         else:
-            return None
+            print( 'oh no')
+            print( self.board )
+            for move in self.history:
+                print( move )
+            print( 'Trying to make: ' ,coords_from , direction )
+            print('\n')
+            #shitty error handling
+            return 'bleh'
 
         self.check_winner()
 
@@ -292,22 +316,19 @@ class PlayerVSAIGame( Game ):
 
         return 1 / black_dist - white_dist / 100
 
-
     def minimax( self , depth , alpha , beta , maximizing_player = True ): #AI AI AI
-
         if( depth == 0 or self.winner == WHITE or self.winner == BLACK ):
-            return self.eval_func() , self
-        if( depth == 3):
-            for move in self.history:
-                print( move )
+            return self.eval_func() , self.history[-1]
 
-            print('\n')
         if maximizing_player:
             maxEval = float('-inf')
             best_move = []
             for move in self.board.move_generation( self.turn ):
-                self.make_turn( move[0] , move[1] )
-                eval , _ = self.minimax( depth - 1 , alpha , beta , False )
+                #handle something that is going wrong in move generation/making/undoing lol
+                outcome = self.make_turn( move[0] , move[1] )
+                if( outcome == 'bleh' ):
+                    continue
+                eval, _ = self.minimax( depth - 1 , alpha , beta , False )
                 if( eval > maxEval ):
                     maxEval = eval
                     best_move = self.history[-1]
@@ -316,36 +337,17 @@ class PlayerVSAIGame( Game ):
                         self.undo_last_turn()
                         break
                 self.undo_last_turn()
+
             return maxEval, best_move
-
-
-            # for child in self.children_generator():
-            #     eval , _ = child.minimax( depth - 1 , alpha , beta , False )
-            #     if( eval > maxEval ):
-            #         maxEval = eval
-            #         best_move = child.history[-1]
-            #         alpha = max( alpha, maxEval)
-            #         if beta <= alpha:
-            #             break
-            # return maxEval, best_move
 
         else:
             minEval = float('inf')
             worst_move = []
-
-            # for child in self.children_generator():
-            #     eval, _ = child.minimax( depth - 1 , alpha , beta , True )
-            #     if( eval < minEval ):
-            #         minEval = eval
-            #         worst_move = child.history[-1]
-            #         beta = min( beta, minEval)
-            #         if beta <= alpha:
-            #             break
-            # return minEval, worst_move
-
-            #pseudo-code for alternative, when using undo move
             for move in self.board.move_generation( self.turn ):
-                self.make_turn( move[0] , move[1] )
+                #handle something that is going wrong in move generation/making/undoing lol
+                outcome = self.make_turn( move[0] , move[1] )
+                if( outcome == 'bleh'):
+                    continue
                 eval, _ = self.minimax( depth - 1 , alpha , beta , True )
                 if( eval < minEval ):
                     minEval = eval
@@ -356,3 +358,68 @@ class PlayerVSAIGame( Game ):
                         break
                 self.undo_last_turn()
             return minEval, worst_move
+
+
+    # def minimax( self , depth , alpha , beta , maximizing_player = True ): #AI AI AI
+    #
+    #     if( depth == 0 or self.winner == WHITE or self.winner == BLACK ):
+    #         return self.eval_func() , self
+    #     if( depth == 3):
+    #         for move in self.history:
+    #             print( move )
+    #
+    #         print('\n')
+    #     if maximizing_player:
+    #         maxEval = float('-inf')
+    #         best_move = []
+    #         for move in self.board.move_generation( self.turn ):
+    #             self.make_turn( move[0] , move[1] )
+    #             eval , _ = self.minimax( depth - 1 , alpha , beta , False )
+    #             if( eval > maxEval ):
+    #                 maxEval = eval
+    #                 best_move = self.history[-1]
+    #                 alpha = max( alpha, maxEval)
+    #                 if beta <= alpha:
+    #                     self.undo_last_turn()
+    #                     break
+    #             self.undo_last_turn()
+    #         return maxEval, best_move
+    #
+    #
+    #         # for child in self.children_generator():
+    #         #     eval , _ = child.minimax( depth - 1 , alpha , beta , False )
+    #         #     if( eval > maxEval ):
+    #         #         maxEval = eval
+    #         #         best_move = child.history[-1]
+    #         #         alpha = max( alpha, maxEval)
+    #         #         if beta <= alpha:
+    #         #             break
+    #         # return maxEval, best_move
+    #
+    #     else:
+    #         minEval = float('inf')
+    #         worst_move = []
+    #
+    #         # for child in self.children_generator():
+    #         #     eval, _ = child.minimax( depth - 1 , alpha , beta , True )
+    #         #     if( eval < minEval ):
+    #         #         minEval = eval
+    #         #         worst_move = child.history[-1]
+    #         #         beta = min( beta, minEval)
+    #         #         if beta <= alpha:
+    #         #             break
+    #         # return minEval, worst_move
+    #
+    #         #pseudo-code for alternative, when using undo move
+    #         for move in self.board.move_generation( self.turn ):
+    #             self.make_turn( move[0] , move[1] )
+    #             eval, _ = self.minimax( depth - 1 , alpha , beta , True )
+    #             if( eval < minEval ):
+    #                 minEval = eval
+    #                 worst_move = self.history[-1]
+    #                 beta = min( beta, minEval)
+    #                 if beta <= alpha:
+    #                     self.undo_last_turn()
+    #                     break
+    #             self.undo_last_turn()
+    #         return minEval, worst_move

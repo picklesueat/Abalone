@@ -193,7 +193,7 @@ def game_type_menu(  ):
 
     size = 2
     two_player = True
-    depth = 4
+    depth = 3
 
     def set_size( val , siz ):
         nonlocal size
@@ -204,7 +204,7 @@ def game_type_menu(  ):
         two_player = two_playe
         depth = depth
 
-    menu.add_selector('Size :', [('2', 2), ('3', 3), ('4', 4)], onchange=set_size)
+    menu.add_selector('Size :', [('2', 2), ('3', 3), ('4', 4), ('5', 5)], onchange=set_size)
     menu.add_selector('Game Type :', [('Two Player', True , 1), ('ArTiFicAil InTeLliGence', False , depth)], onchange=set_game_type)
     # menu.add_button('Two Player', game, size )
     # menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 2 )
