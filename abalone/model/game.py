@@ -197,6 +197,9 @@ class Game():
         self.check_winner()
 
     def undo_last_turn( self ):
+        if not self.history:
+            return None
+            
         last_move = self.history.pop(-1)
         self.board.undo_move( last_move.coords_from , last_move.direction , last_move.move_type )
         if( last_move.move_type == board.AbaloneBoard.POINT ):
