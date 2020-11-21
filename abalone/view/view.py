@@ -176,7 +176,8 @@ def game( size , two_player = True , depth = 2 ):
     white_ball, black_ball = load_pieces()
 
     update_view( cont.game )
-    plus_rect , minus_rect = draw_depth_button()
+    if not two_player:
+        plus_rect , minus_rect = draw_depth_button()
 
     running = True
     while running:
@@ -199,12 +200,13 @@ def game( size , two_player = True , depth = 2 ):
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
 
-                if( plus_rect.collidepoint( pos )):
-                    cont.adjust_AI_depth( 1 )
-                    update_view( cont.game )
-                elif( minus_rect.collidepoint( pos ) ):
-                    cont.adjust_AI_depth( -1 )
-                    update_view( cont.game )
+                if not two_player:
+                    if( plus_rect.collidepoint( pos )):
+                        cont.adjust_AI_depth( 1 )
+                        update_view( cont.game )
+                    elif( minus_rect.collidepoint( pos ) ):
+                        cont.adjust_AI_depth( -1 )
+                        update_view( cont.game )
 
                 pos = pixel_coord( pos[0] , pos[1] )
 
@@ -222,7 +224,11 @@ def game( size , two_player = True , depth = 2 ):
                     update_view( cont.game )
 
                 if( cont.prev_click_coords ):
-                    pygame.draw.rect(screen ,(0,0,255),(100,100,100,50))
+                    pygame.draw.rect(screen ,(0,200,75),(25,100,200,75))
+                    pygame.font.init()
+                    text = pygame.font.SysFont('Comic Sans MS', 30)
+                    text_surf = text.render('Piece(s) in hand', False , COLOR_BLACK )
+                    screen.blit( text_surf , ( 50 , 125 ))
                     pygame.display.flip()
 
             if( cont.check_winner() ):
