@@ -175,6 +175,9 @@ class Game():
 
         move_type = self.board.direction_move( coords_from, direction )
 
+        if( move_type is None ):
+            return None
+
         if( move_type == self.board.POINT ):
             self.change_player()
             self.lose_piece()
@@ -188,15 +191,8 @@ class Game():
             self.change_player()
             self.history.append(Move( coords_from , direction ))
 
-        else:
-            print( 'oh no')
-            print( self.board )
-            for move in self.history:
-                print( move )
-            print( 'Trying to make: ' ,coords_from , direction )
-            print('\n')
-            #shitty error handling
-            return 'bleh'
+
+
 
         self.check_winner()
 

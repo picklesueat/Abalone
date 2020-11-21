@@ -89,9 +89,48 @@ def game( size , two_player = True , depth = 2 ):
               True,
               [(cos(i / 6 * pi2 + ( pi2 / 4)) * radius + position[0], sin(i / 6 * pi2 + ( pi2 / 4)) * radius + position[1]) for i in range(0, 6)] , width = 5)
 
+    def draw_depth_button():
+        if cont.two_player :
+            return None
+
+        button_width = 300
+        button_height = 100
+        pygame.draw.rect(screen, ( 255 , 255 , 255 ),(WIDTH - button_width , 0 , button_width ,button_height))
+
+        pygame.font.init()
+        text = pygame.font.SysFont('Comic Sans MS', 50)
+        text_surf = text.render('AI Strength', False , COLOR_BLACK )
+        screen.blit( text_surf , ( WIDTH - button_width/ 1.25 , button_height /4 ))
+
+        pygame.font.init()
+        text = pygame.font.SysFont('Comic Sans MS', 30)
+        text_surf = text.render( '('+str(cont.game.black_player.depth)+')' , False , COLOR_BLACK )
+        screen.blit( text_surf , ( WIDTH - button_width/ 2 , button_height /1.5 ))
+
+        #plus button
+        plus_button_height = 75
+        plus_rect = pygame.draw.rect(screen, ( 200 , 200 , 200 ),(WIDTH - button_width , button_height , button_width /2 , plus_button_height ))
+
+        pygame.font.init()
+        text = pygame.font.SysFont('Comic Sans MS', 50)
+        text_surf = text.render('+', False , COLOR_BLACK )
+        screen.blit( text_surf , ( WIDTH - 3*button_width/4 , button_height + plus_button_height / 4 ))
+
+        #minue button
+        minus_rect = pygame.draw.rect(screen, ( 220 , 220 , 220 ),(WIDTH - button_width / 2 , button_height , button_width /2 , plus_button_height ))
+
+
+        pygame.font.init()
+        text = pygame.font.SysFont('Comic Sans MS', 50)
+        text_surf = text.render('-', False , COLOR_BLACK )
+        screen.blit( text_surf , ( WIDTH - button_width/4 , button_height + plus_button_height / 4 ))
+
+        return plus_rect , minus_rect
+
     def update_view( game ):
         screen.fill(COLOR_BLACK)
 
+        draw_depth_button()
         draw_lives( game )
 
         for hex in game:
@@ -137,6 +176,7 @@ def game( size , two_player = True , depth = 2 ):
     white_ball, black_ball = load_pieces()
 
     update_view( cont.game )
+    plus_rect , minus_rect = draw_depth_button()
 
     running = True
     while running:
@@ -156,10 +196,18 @@ def game( size , two_player = True , depth = 2 ):
                     update_view( cont.game )
 
 
-
             if event.type == pygame.MOUSEBUTTONDOWN:
                 pos = pygame.mouse.get_pos()
+
+                if( plus_rect.collidepoint( pos )):
+                    cont.adjust_AI_depth( 1 )
+                    update_view( cont.game )
+                elif( minus_rect.collidepoint( pos ) ):
+                    cont.adjust_AI_depth( -1 )
+                    update_view( cont.game )
+
                 pos = pixel_coord( pos[0] , pos[1] )
+
                 pos = axial_coord( *hex_round(  *pixel_to_hex( pos )  ) )
 
                 cont.take_click( pos )
@@ -193,25 +241,24 @@ def game_type_menu(  ):
 
     size = 2
     two_player = True
-    depth = 3
+
 
     def set_size( val , siz ):
         nonlocal size
         size = siz
 
-    def set_game_type( val , two_playe , dept):
-        nonlocal two_player , depth
+    def set_game_type( val , two_playe):
+        nonlocal two_player
         two_player = two_playe
-        depth = depth
+
 
     menu.add_selector('Size :', [('2', 2), ('3', 3), ('4', 4), ('5', 5)], onchange=set_size)
-    menu.add_selector('Game Type :', [('Two Player', True , 1), ('ArTiFicAil InTeLliGence', False , depth)], onchange=set_game_type)
-    # menu.add_button('Two Player', game, size )
-    # menu.add_button('ArTiFicAil InTeLliGence', game, size , False , 2 )
+    menu.add_selector('Game Type :', [('Two Player', True), ('ArTiFicAil InTeLliGence', False)], onchange=set_game_type)
+
 
 
     def start():
-        game( size , two_player , depth )
+        game( size , two_player)
 
     menu.add_button('Start', start )
 

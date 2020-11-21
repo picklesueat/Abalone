@@ -55,3 +55,8 @@ class Controller():
         else:
             self.game.undo_last_turn()
             self.game.undo_last_turn()
+
+    def adjust_AI_depth( self , direction ):
+        if direction + self.game.black_player.depth < 1:
+            return None
+        self.game.black_player.depth = direction + self.game.black_player.depth
