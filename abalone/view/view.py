@@ -89,43 +89,47 @@ def game( size , two_player = True , depth = 2 ):
               True,
               [(cos(i / 6 * pi2 + ( pi2 / 4)) * radius + position[0], sin(i / 6 * pi2 + ( pi2 / 4)) * radius + position[1]) for i in range(0, 6)] , width = 5)
 
+    def draw_text( size , words , coord: pixel_coord ):
+        pygame.font.init()
+        text = pygame.font.SysFont('Comic Sans MS', size)
+        text_surf = text.render( words , False , COLOR_BLACK )
+        screen.blit( text_surf , (coord.x , coord.y) )
+
     def draw_depth_button():
         if cont.two_player :
             return None
 
         button_width = 300
         button_height = 100
-        pygame.draw.rect(screen, ( 255 , 255 , 255 ),(WIDTH - button_width , 0 , button_width ,button_height))
 
-        pygame.font.init()
-        text = pygame.font.SysFont('Comic Sans MS', 50)
-        text_surf = text.render('AI Strength', False , COLOR_BLACK )
-        screen.blit( text_surf , ( WIDTH - button_width/ 1.25 , button_height /4 ))
+        plus_button_height = 100
 
+        def draw_AI_strength_button():
+            pygame.draw.rect(screen, ( 255 , 255 , 255 ),(WIDTH - button_width , 0 , button_width ,button_height))
+            draw_text( 50 , 'AI Strength', pixel_coord( WIDTH - button_width/ 1.25 , button_height /4 ) )
+
+        def draw_plus_button():
+            #plus button
+            plus_rect = pygame.draw.rect(screen, ( 200 , 200 , 200 ),(WIDTH - button_width , button_height , button_width /2 , plus_button_height ))
+            draw_text( 50 , '+', pixel_coord( WIDTH - 3*button_width/4 , button_height + plus_button_height / 4 ) )
+            return plus_rect
+
+        def draw_minus_button():
+            #minue button
+            minus_rect = pygame.draw.rect(screen, ( 220 , 220 , 220 ),(WIDTH - button_width / 2 , button_height , button_width /2 , plus_button_height ))
+            draw_text( 50 , '-', pixel_coord( WIDTH - button_width/4 , button_height + plus_button_height / 4 ) )
+            return minus_rect
+
+        draw_AI_strength_button()
+
+        #prints current AI depth
         pygame.font.init()
         text = pygame.font.SysFont('Comic Sans MS', 30)
         text_surf = text.render( '('+str(cont.game.black_player.depth)+')' , False , COLOR_BLACK )
         screen.blit( text_surf , ( WIDTH - button_width/ 2 , button_height /1.5 ))
 
-        #plus button
-        plus_button_height = 75
-        plus_rect = pygame.draw.rect(screen, ( 200 , 200 , 200 ),(WIDTH - button_width , button_height , button_width /2 , plus_button_height ))
 
-        pygame.font.init()
-        text = pygame.font.SysFont('Comic Sans MS', 50)
-        text_surf = text.render('+', False , COLOR_BLACK )
-        screen.blit( text_surf , ( WIDTH - 3*button_width/4 , button_height + plus_button_height / 4 ))
-
-        #minue button
-        minus_rect = pygame.draw.rect(screen, ( 220 , 220 , 220 ),(WIDTH - button_width / 2 , button_height , button_width /2 , plus_button_height ))
-
-
-        pygame.font.init()
-        text = pygame.font.SysFont('Comic Sans MS', 50)
-        text_surf = text.render('-', False , COLOR_BLACK )
-        screen.blit( text_surf , ( WIDTH - button_width/4 , button_height + plus_button_height / 4 ))
-
-        return plus_rect , minus_rect
+        return  draw_plus_button(), draw_minus_button()
 
     def update_view( game ):
         screen.fill(COLOR_BLACK)
@@ -140,8 +144,6 @@ def game( size , two_player = True , depth = 2 ):
 
         cont.updated = False
         pygame.display.flip()
-
-
 
     def draw_lives( game ):
         for i in range( game.black_player.lives ):

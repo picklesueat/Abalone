@@ -50,6 +50,8 @@ class Controller():
                 self.updated = True
 
     def undo_move( self ):
+        ''' Calls game to undo move
+        '''
         if self.two_player:
             self.game.undo_last_turn()
         else:
@@ -57,6 +59,8 @@ class Controller():
             self.game.undo_last_turn()
 
     def adjust_AI_depth( self , direction ):
+        ''' Calls game to adjust AI search depth
+        '''
         if direction + self.game.black_player.depth < 1:
             return None
         self.game.black_player.depth = direction + self.game.black_player.depth
